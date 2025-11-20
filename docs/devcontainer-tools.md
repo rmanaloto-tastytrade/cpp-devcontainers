@@ -12,7 +12,7 @@ This document captures the contents of `.devcontainer/Dockerfile`, similar in sp
 
 ### Core Packages (APT)
 Installed via `apt-get` in the first layer:
-- Build chain: `build-essential`, `clang-21` suite, `gcc-14` (from Ubuntu Toolchain PPA), `lld`, `lldb`, `llvm-21-dev`, `libclang-21-dev`, `libc++/libc++abi-21-dev`, `binutils`
+- Build chain: `build-essential`, full LLVM 21 stack (clang/clangd/clang-tidy, lld, lldb, MLIR, BOLT, flang, libomp, libunwind, libclc, libfuzzer, polly, libllvmlibc, doc/examples packages), `gcc-14` (from Ubuntu Toolchain PPA), `binutils`
 - Tooling: `curl`, `wget`, `sudo`, `pkg-config`, `bash-completion`, `zsh`, `cppcheck`, `valgrind`, `gdb`, `graphviz`, `doxygen`, `rsync`, `python3` (+pip/venv), `tzdata`, `xz-utils`, `unzip`, `zip`, `tar`
 - vcpkg manifest prerequisites: `autoconf`, `automake`, `libtool`, `m4`, `autoconf-archive`, `patchelf`
 - SSH / misc: `openssh-client`, `ca-certificates`, `gnupg`
@@ -31,6 +31,7 @@ Installed via `apt-get` in the first layer:
 | Node.js / npm | Official Node.js tarball v25.2.1 |
 | Linux perf | `linux-tools-common` + `linux-tools-generic` (+ best-effort `linux-tools-$(uname -r)`) |
 | binutils + gdb | Built from source (`bminor/binutils-gdb` tag `binutils-2_45_1`) |
+| LLVM extras | clang-tools, clangd, clang-tidy, libclang-rt, polly, libfuzzer, libomp, libclc, libunwind, MLIR, BOLT, flang, libllvmlibc |
 | uv / ruff / ty | Astral install scripts (`/usr/local/bin`) |
 | pixi | Official installer, binary moved to `/usr/local/bin` |
 
@@ -74,6 +75,8 @@ mold --version
 include-what-you-use --version
 gdb --version
 objdump --version
+clangd --version
+flang-21 --version
 perf --version || perf --help
 ccache --version
 sccache --version
