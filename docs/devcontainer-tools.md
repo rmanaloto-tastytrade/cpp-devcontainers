@@ -12,14 +12,15 @@ This document captures the contents of `.devcontainer/Dockerfile`, similar in sp
 
 ### Core Packages (APT)
 Installed via `apt-get` in the first layer:
-- Build chain: `build-essential`, `clang-21` suite, `gcc-14` (from Ubuntu Toolchain PPA), `lld`, `lldb`, `llvm-21-dev`, `libclang-21-dev`, `libc++/libc++abi-21-dev`
-- Tooling: `git`, `curl`, `wget`, `sudo`, `pkg-config`, `bash-completion`, `zsh`, `cppcheck`, `valgrind`, `gdb`, `nodejs`, `npm`, `graphviz`, `doxygen`, `rsync`, `python3` (+pip/venv), `tzdata`, `xz-utils`, `unzip`, `zip`, `tar`
+- Build chain: `build-essential`, `clang-21` suite, `gcc-14` (from Ubuntu Toolchain PPA), `lld`, `lldb`, `llvm-21-dev`, `libclang-21-dev`, `libc++/libc++abi-21-dev`, `binutils`
+- Tooling: `curl`, `wget`, `sudo`, `pkg-config`, `bash-completion`, `zsh`, `cppcheck`, `valgrind`, `gdb`, `graphviz`, `doxygen`, `rsync`, `python3` (+pip/venv), `tzdata`, `xz-utils`, `unzip`, `zip`, `tar`
 - vcpkg manifest prerequisites: `autoconf`, `automake`, `libtool`, `m4`, `autoconf-archive`, `patchelf`
 - SSH / misc: `openssh-client`, `ca-certificates`, `gnupg`
 
 ### Additional Toolchain Components
 | Tool | Version | Source |
 | --- | --- | --- |
+| Git | Latest stable via `ppa:git-core/ppa` |
 | CMake | latest from Kitware APT |
 | Ninja | v1.13.1 GitHub release (curl with retry) |
 | Mold | v2.40.4 GitHub release (`mold` + `ld.mold`) |
@@ -27,6 +28,10 @@ Installed via `apt-get` in the first layer:
 | IWYU | `clang_21` branch built from source (matches LLVM 21 install) |
 | MRDocs | v0.8.0 binary release |
 | Mermaid CLI | installed globally via npm |
+| Node.js / npm | NodeSource 22.x repo |
+| Linux perf | `linux-tools-common` + `linux-tools-generic` (+ best-effort `linux-tools-$(uname -r)`) |
+| uv / ruff / ty | Astral install scripts (`/usr/local/bin`) |
+| pixi | Official installer, binary moved to `/usr/local/bin` |
 
 ### Caching & Productivity Tools
 | Tool | Version | Notes |
@@ -59,13 +64,21 @@ Run these inside the devcontainer to confirm key tools are available:
 ```bash
 clang++-21 --version
 gcc-14 --version
+git --version
 cmake --version
 ninja --version
+node --version
+npm --version
 mold --version
 include-what-you-use --version
+perf --version || perf --help
 ccache --version
 sccache --version
 rg --version
+uv --version
+ruff --version
+ty --version
+pixi --version
 vcpkg version
 ```
 
