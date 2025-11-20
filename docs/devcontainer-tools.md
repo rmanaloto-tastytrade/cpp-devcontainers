@@ -21,7 +21,7 @@ Installed via `apt-get` in the first layer:
 | Tool | Version | Source |
 | --- | --- | --- |
 | CMake | latest from Kitware APT |
-| Ninja | distro `ninja-build` (Ubuntu 24.04, 1.11.x) |
+| Ninja | v1.13.1 GitHub release (curl with retry) |
 | Mold | v2.40.4 GitHub release (`mold` + `ld.mold`) |
 | GitHub CLI | v2.83.1 GitHub release |
 | IWYU | `clang_21` branch built from source (matches LLVM 21 install) |
