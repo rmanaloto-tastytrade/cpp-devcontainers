@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-sudo chown -R slotmap:slotmap /opt/vcpkg
-sudo chown -R slotmap:slotmap /workspaces
+sudo chown -R slotmap:slotmap /opt/vcpkg || true
+sudo chown -R slotmap:slotmap /opt/vcpkg/downloads || true
+sudo chown -R slotmap:slotmap /workspaces || true
+
+if ! command -v clang++-21 >/dev/null 2>&1; then
+  echo "[post_create] ERROR: clang++-21 not found in PATH" >&2
+  exit 1
+fi
 
 SSH_SOURCE="/workspaces/SlotMap/.devcontainer/ssh"
 SSH_TARGET="$HOME/.ssh"

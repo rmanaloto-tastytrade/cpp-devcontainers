@@ -14,7 +14,7 @@ This document captures the contents of `.devcontainer/Dockerfile`, similar in sp
 Installed via `apt-get` in the first layer:
 - Build chain: `build-essential`, `clang-21` suite, `gcc-14` (from Ubuntu Toolchain PPA), `lld`, `lldb`, `llvm-21-dev`, `libclang-21-dev`, `libc++/libc++abi-21-dev`
 - Tooling: `git`, `curl`, `wget`, `sudo`, `pkg-config`, `bash-completion`, `zsh`, `cppcheck`, `valgrind`, `gdb`, `nodejs`, `npm`, `graphviz`, `doxygen`, `rsync`, `python3` (+pip/venv), `tzdata`, `xz-utils`, `unzip`, `zip`, `tar`
-- vcpkg manifest prerequisites: `autoconf`, `automake`, `libtool`, `m4`, `autoconf-archive`
+- vcpkg manifest prerequisites: `autoconf`, `automake`, `libtool`, `m4`, `autoconf-archive`, `patchelf`
 - SSH / misc: `openssh-client`, `ca-certificates`, `gnupg`
 
 ### Additional Toolchain Components
@@ -34,6 +34,7 @@ Installed via `apt-get` in the first layer:
 | ccache | v4.12.1 (binary tarball) |
 | sccache | v0.12.0 (musl static binary) |
 | ripgrep | v14.1.0 (musl static binary `rg`) |
+| patchelf | 0.15.5 (Ubuntu package) | ensures vcpkg’s fixup steps don’t re-download |
 | vcpkg | latest clone from GitHub with bootstrap script, download cache under `/opt/vcpkg-downloads`, bash/zsh integration |
 
 Environment variables:
