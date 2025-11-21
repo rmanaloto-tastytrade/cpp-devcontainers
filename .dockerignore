@@ -1,0 +1,10 @@
+# Ignore files not needed in Docker context
+.git
+.gitignore
+.dockerignore
+.idea/
+logs/
+cmake-build-debug/
+build/
+*.iml
+slot_map.code-workspace
