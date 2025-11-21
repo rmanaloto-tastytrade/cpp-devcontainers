@@ -79,3 +79,4 @@ flowchart TB
 - Keep dev-only settings in `devcontainer.json`/features (e.g., oh-my-zsh feature, SSHD feature already present); only bake image content, not runtime commands.
 - Always run `scripts/pre_commit.sh` (bake/devcontainer validation + lint) before committing/pushing; only trigger remote rebuild scripts after these checks pass.
 - Prefer Dev Container features for common tooling (SSH, shells, helpers) before adding Dockerfile steps; use bake args/targets for env-specific tweaks to keep the Dockerfile lean.
+- Validation order: 1) run `scripts/pre_commit.sh` locally and fix issues; 2) commit/push; 3) trigger and wait for the Devcontainer Lint workflow to succeed; 4) only then run remote deploy/rebuild scripts.

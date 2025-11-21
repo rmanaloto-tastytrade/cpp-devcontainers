@@ -9,5 +9,5 @@
 4. **Testing** – Keep unit tests in `tests/` aligned with the policy APIs. Tests run through the CMake preset `ctest --preset clang-debug`.
 5. **Dependencies** – All third-party code enters through vcpkg manifests/overlays. Do not add ad-hoc submodules.
 6. **Dev Experience** – CLion/vscode users rely on `.devcontainer/`. Any new tools must be wired into the container and documented in `README.md`.
-7. **Validation cadence** – Run `scripts/pre_commit.sh` (bake/devcontainer lint + hadolint/shellcheck) and resolve failures before committing/pushing. Only instruct running remote build scripts after local validation passes.
+7. **Validation cadence** – Sequence is: (a) Run `scripts/pre_commit.sh` locally and fix failures; (b) commit/push; (c) trigger and wait for remote GitHub Actions lint/validation to pass; (d) only then run remote rebuild scripts.
 8. **Container assembly** – Prefer Dev Container features first (SSH, shells, common tooling), then Bake-time overrides (args/targets) to avoid Dockerfile bloat. Keep Dockerfile minimal and deterministic.
