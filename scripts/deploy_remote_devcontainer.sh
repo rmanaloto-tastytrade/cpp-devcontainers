@@ -27,9 +27,9 @@ LOCAL_USER="$(id -un)"
 REMOTE_HOST="c24s1.ch2"
 REMOTE_USER="rmanaloto"
 SSH_KEY_PATH="$HOME/.ssh/id_ed25519.pub"
-REMOTE_KEY_CACHE="~/macbook_ssh_keys"
-REMOTE_REPO_PATH="~/dev/github/SlotMap"
-REMOTE_SANDBOX_PATH="~/dev/devcontainers/SlotMap"
+REMOTE_KEY_CACHE="$HOME/macbook_ssh_keys"
+REMOTE_REPO_PATH="$HOME/dev/github/SlotMap"
+REMOTE_SANDBOX_PATH="$HOME/dev/devcontainers/SlotMap"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -91,15 +91,20 @@ scp "$SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_KEY_PATH}"
 ssh "${REMOTE_USER}@${REMOTE_HOST}" "chmod 700 $REMOTE_KEY_CACHE && chmod 600 $REMOTE_KEY_PATH"
 
 echo "Triggering remote devcontainer rebuild..."
-ssh "${REMOTE_USER}@${REMOTE_HOST}" bash <<EOF
+ssh "${REMOTE_USER}@${REMOTE_HOST}" \
+  REPO_PATH="$REMOTE_REPO_PATH" \
+  SANDBOX_PATH="$REMOTE_SANDBOX_PATH" \
+  KEY_CACHE="$REMOTE_KEY_CACHE" \
+  BRANCH="$CURRENT_BRANCH" \
+  bash <<'EOF'
 set -euo pipefail
-cd $REMOTE_REPO_PATH
+cd "$REPO_PATH"
 git fetch origin
-git checkout $CURRENT_BRANCH
-git pull --ff-only origin $CURRENT_BRANCH
-REPO_PATH=$REMOTE_REPO_PATH \\
-SANDBOX_PATH=$REMOTE_SANDBOX_PATH \\
-KEY_CACHE=$REMOTE_KEY_CACHE \\
+git checkout "$BRANCH"
+git pull --ff-only origin "$BRANCH"
+REPO_PATH="$REPO_PATH" \
+SANDBOX_PATH="$SANDBOX_PATH" \
+KEY_CACHE="$KEY_CACHE" \
 ./scripts/run_local_devcontainer.sh
 EOF
 

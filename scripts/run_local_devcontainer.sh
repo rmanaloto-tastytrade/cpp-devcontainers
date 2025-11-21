@@ -24,11 +24,46 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTAINER_USER=${CONTAINER_USER:-$(id -un)}
 CONTAINER_UID=${CONTAINER_UID:-$(id -u)}
 CONTAINER_GID=${CONTAINER_GID:-$(id -g)}
+DEVCONTAINER_CLI_VERSION=${DEVCONTAINER_CLI_VERSION:-"0.80.2"}
 
 echo "[remote] Repo source       : $REPO_PATH"
 echo "[remote] Sandbox workspace : $SANDBOX_PATH"
 echo "[remote] Mac key cache     : $KEY_CACHE"
 echo
+
+ensure_devcontainer_cli() {
+  if command -v devcontainer >/dev/null 2>&1; then
+    local current
+    current="$(devcontainer --version 2>/dev/null || true)"
+    if [[ "$current" == "$DEVCONTAINER_CLI_VERSION" ]]; then
+      echo "[remote] Found devcontainer CLI $current."
+      return 0
+    fi
+    echo "[remote] devcontainer CLI version $current != $DEVCONTAINER_CLI_VERSION; upgrading..."
+  else
+    echo "[remote] devcontainer CLI not found; installing $DEVCONTAINER_CLI_VERSION..."
+  fi
+
+  if ! command -v npm >/dev/null 2>&1; then
+    echo "[remote] ERROR: npm is required to install @devcontainers/cli. Install Node.js/npm on the host and rerun." >&2
+    exit 1
+  fi
+
+  npm install -g "@devcontainers/cli@${DEVCONTAINER_CLI_VERSION}"
+  if devcontainer --version >/dev/null 2>&1; then
+    local post_install
+    post_install="$(devcontainer --version 2>/dev/null || true)"
+    if [[ "$post_install" == "$DEVCONTAINER_CLI_VERSION" ]]; then
+      echo "[remote] Installed devcontainer CLI $post_install."
+    else
+      echo "[remote] ERROR: devcontainer CLI still reports $post_install after install; check PATH/symlink to the new npm global bin." >&2
+      exit 1
+    fi
+  else
+    echo "[remote] ERROR: devcontainer CLI installation failed." >&2
+    exit 1
+  fi
+}
 
 [[ -d "$REPO_PATH" ]] || { echo "[remote] ERROR: Repo path not found."; exit 1; }
 [[ -d "$KEY_CACHE" ]] || { echo "[remote] WARNING: Key cache $KEY_CACHE missing; create and rsync your .pub keys there."; mkdir -p "$KEY_CACHE"; }
@@ -60,6 +95,7 @@ echo "[remote] Ensuring baked images (base: $BASE_IMAGE, dev: $DEV_IMAGE)..."
 pushd "$SANDBOX_PATH" >/dev/null
 # Validate bake file before building
 "$SCRIPT_DIR/check_docker_bake.sh" "$SANDBOX_PATH"
+ensure_devcontainer_cli
 # Validate devcontainer configuration syntax
 "$SCRIPT_DIR/check_devcontainer_config.sh" "$SANDBOX_PATH"
 # Build base if missing

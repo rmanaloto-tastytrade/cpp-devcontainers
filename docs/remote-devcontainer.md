@@ -27,6 +27,16 @@ flowchart TD
     F -->|port 2222 published as 9222| A
 ```
 
+### Required Local Checks Before Deploy
+1. Run `./scripts/pre_commit.sh` locally. It stays fast and validates:
+   - `scripts/check_docker_bake.sh` – prints and dry-runs `.devcontainer/docker-bake.hcl` to ensure targets/args parse before building.
+   - `scripts/check_devcontainer_config.sh` – validates `devcontainer.json`/`*.jsonc` structure (skips if Docker/CLI missing).
+   - `hadolint` on `.devcontainer/Dockerfile` (warnings allowed) to catch Dockerfile issues early.
+   - `shellcheck --severity=warning scripts/*.sh` to lint helper scripts.
+2. Only commit/push after these pass. If any fail, fix locally first.
+3. Push and watch GitHub Actions (linters/validators) until they go green. Do not trigger the remote rebuild until CI is clean.
+4. After CI is green, run `./scripts/deploy_remote_devcontainer.sh --remote-host c24s1.ch2` (and `--remote-user` if needed) to rebuild the devcontainer on the remote host.
+
 ### Detailed Steps
 1. **Local machine (Mac)**  
    Run `./scripts/deploy_remote_devcontainer.sh`. The script:
