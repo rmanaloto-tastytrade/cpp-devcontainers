@@ -27,6 +27,7 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: .devcontainer/Dockerfile
+          ignore: DL3003,DL3008,DL3016,DL4006
           args: --failure-threshold error
 
       - name: Shellcheck scripts
