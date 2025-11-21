@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" serverName="c24s1.ch2-devcontainer" deleteMissingItems="true" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
+    <option name="confirmBeforeUploading" value="false" />
     <serverData>
       <paths name="c0903s4.ny5 - ubuntu - gcc (dd45c9cd-94e5-4a4b-8b83-67f492b9daa5)">
         <serverdata>
@@ -8,8 +9,17 @@
             <mapping deploy="/tmp/tmp.9IIU8luykz/SlotMap" local="$PROJECT_DIR$" />
           </mappings>
           <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/build/clang-debug" />
+            <excludedPath local="true" path="$PROJECT_DIR$/build/clang-release" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
           </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="c24s1.ch2-devcontainer">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/dev/github/SergeyMakeev/SlotMap" local="$PROJECT_DIR$" web="/" />
+          </mappings>
         </serverdata>
       </paths>
     </serverData>
