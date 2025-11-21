@@ -66,7 +66,10 @@ if ! docker image inspect "$BASE_IMAGE" >/dev/null 2>&1; then
     -f "$SANDBOX_PATH/.devcontainer/docker-bake.hcl" \
     base \
     --set base.tags="$BASE_IMAGE" \
-    --set '*.args.BASE_IMAGE'="$BASE_IMAGE"
+    --set '*.args.BASE_IMAGE'="$BASE_IMAGE" \
+    --set '*.args.USERNAME'="$CONTAINER_USER" \
+    --set '*.args.USER_UID'="$CONTAINER_UID" \
+    --set '*.args.USER_GID'="$CONTAINER_GID"
 else
   echo "[remote] Found base image $BASE_IMAGE."
 fi
@@ -79,15 +82,18 @@ if ! docker image inspect "$DEV_IMAGE" >/dev/null 2>&1; then
     devcontainer \
     --set base.tags="$BASE_IMAGE" \
     --set devcontainer.tags="$DEV_IMAGE" \
-    --set '*.args.BASE_IMAGE'="$BASE_IMAGE"
+    --set '*.args.BASE_IMAGE'="$BASE_IMAGE" \
+    --set '*.args.USERNAME'="$CONTAINER_USER" \
+    --set '*.args.USER_UID'="$CONTAINER_UID" \
+    --set '*.args.USER_GID'="$CONTAINER_GID"
 else
   echo "[remote] Found $DEV_IMAGE locally; skipping bake."
 fi
 popd >/dev/null
 
-CONTAINER_USER=${CONTAINER_USER:-slotmap}
-CONTAINER_UID=${CONTAINER_UID:-1000}
-CONTAINER_GID=${CONTAINER_GID:-1000}
+CONTAINER_USER=${CONTAINER_USER:-$(id -un)}
+CONTAINER_UID=${CONTAINER_UID:-$(id -u)}
+CONTAINER_GID=${CONTAINER_GID:-$(id -g)}
 
 export DEVCONTAINER_USER="${CONTAINER_USER}"
 export DEVCONTAINER_UID="${CONTAINER_UID}"
