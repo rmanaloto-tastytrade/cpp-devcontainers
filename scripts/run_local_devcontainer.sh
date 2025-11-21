@@ -57,6 +57,8 @@ echo "[remote] Ensuring baked images (base: $BASE_IMAGE, dev: $DEV_IMAGE)..."
 pushd "$SANDBOX_PATH" >/dev/null
 # Validate bake file before building
 "$SCRIPT_DIR/check_docker_bake.sh" "$SANDBOX_PATH"
+# Validate devcontainer configuration syntax
+"$SCRIPT_DIR/check_devcontainer_config.sh" "$SANDBOX_PATH"
 if ! docker image inspect "$DEV_IMAGE" >/dev/null 2>&1; then
   docker buildx bake \
     -f "$SANDBOX_PATH/.devcontainer/docker-bake.hcl" \
