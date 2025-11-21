@@ -25,11 +25,17 @@ CONTAINER_USER=${CONTAINER_USER:-$(id -un)}
 CONTAINER_UID=${CONTAINER_UID:-$(id -u)}
 CONTAINER_GID=${CONTAINER_GID:-$(id -g)}
 DEVCONTAINER_CLI_VERSION=${DEVCONTAINER_CLI_VERSION:-"0.80.2"}
+DOCKER_CONTEXT=${DOCKER_CONTEXT:-}
 
 echo "[remote] Repo source       : $REPO_PATH"
 echo "[remote] Sandbox workspace : $SANDBOX_PATH"
 echo "[remote] Mac key cache     : $KEY_CACHE"
 echo
+
+if [[ -n "$DOCKER_CONTEXT" ]]; then
+  echo "[remote] Using docker context: $DOCKER_CONTEXT"
+  export DOCKER_CONTEXT
+fi
 
 ensure_devcontainer_cli() {
   if command -v devcontainer >/dev/null 2>&1; then

@@ -1,6 +1,7 @@
 # Project Plan
 
 1. **Environment & Tooling (Current phase)**  
+   - **Use remote Docker context to build/run the devcontainer** – follow `docs/remote-docker-context.md` for configuration, build, and run. All AI agent interactions must refer to that document.  
    - Harden devcontainer (clang-21, mold, cmake/ninja, MRDocs, Graphviz, Doxygen, Mermaid, vcpkg overlays).  
    - Define build presets, documentation scripts, and vcpkg manifests. ✅  
    - Add renderable workflow diagrams (Mermaid/PlantUML + export script to SVG/PNG) for devcontainer/bake flows.

@@ -24,12 +24,17 @@ USAGE
 die(){ echo "Error: $*" >&2; exit 1; }
 
 LOCAL_USER="$(id -un)"
-REMOTE_HOST="c24s1.ch2"
+DEFAULT_REMOTE_HOST="${DEFAULT_REMOTE_HOST:-c24s1.ch2}"
+REMOTE_HOST="$DEFAULT_REMOTE_HOST"
 REMOTE_USER="rmanaloto"
 SSH_KEY_PATH="$HOME/.ssh/id_ed25519.pub"
 REMOTE_KEY_CACHE=""
 REMOTE_REPO_PATH=""
 REMOTE_SANDBOX_PATH=""
+REMOTE_SSH_SYNC_DIR="${REMOTE_SSH_SYNC_DIR:-"$HOME/devcontainers/ssh_keys"}"
+SSH_SYNC_SOURCE="${SSH_SYNC_SOURCE:-"$HOME/.ssh/"}"
+SYNC_MAC_SSH="${SYNC_MAC_SSH:-1}"
+DOCKER_CONTEXT="${DOCKER_CONTEXT:-}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -45,6 +50,8 @@ while [[ $# -gt 0 ]]; do
       REMOTE_HOST="$2"; shift 2 ;;
     --remote-user)
       REMOTE_USER="$2"; shift 2 ;;
+    --docker-context)
+      DOCKER_CONTEXT="$2"; shift 2 ;;
     -h|--help)
       usage; exit 0 ;;
     --)
@@ -71,9 +78,33 @@ if [[ -z "$REMOTE_USER" ]]; then
 fi
 
 REMOTE_HOME=${REMOTE_HOME:-"/home/${REMOTE_USER}"}
-REMOTE_KEY_CACHE=${REMOTE_KEY_CACHE:-"${REMOTE_HOME}/macbook_ssh_keys"}
+REMOTE_KEY_CACHE=${REMOTE_KEY_CACHE:-"${REMOTE_HOME}/devcontainers/ssh_keys"}
 REMOTE_REPO_PATH=${REMOTE_REPO_PATH:-"${REMOTE_HOME}/dev/github/SlotMap"}
 REMOTE_SANDBOX_PATH=${REMOTE_SANDBOX_PATH:-"${REMOTE_HOME}/dev/devcontainers/SlotMap"}
+
+ensure_docker_context() {
+  if [[ -z "$DOCKER_CONTEXT" ]]; then
+    return
+  fi
+  if command -v docker >/dev/null 2>&1; then
+    if ! docker context inspect "$DOCKER_CONTEXT" >/dev/null 2>&1; then
+      echo "Creating docker context '$DOCKER_CONTEXT' for $REMOTE_USER@$REMOTE_HOST..."
+      docker context create "$DOCKER_CONTEXT" --docker "host=ssh://${REMOTE_USER}@${REMOTE_HOST}"
+    else
+      echo "Using existing docker context '$DOCKER_CONTEXT'."
+    fi
+  else
+    echo "WARNING: docker CLI not available locally; cannot create/verify docker context '$DOCKER_CONTEXT'."
+  fi
+}
+
+if [[ "${SYNC_MAC_SSH}" == "1" ]]; then
+  echo "Syncing local SSH directory to remote: ${SSH_SYNC_SOURCE} -> ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_SSH_SYNC_DIR}"
+  rsync -av --chmod=F600,D700 --rsync-path="mkdir -p ${REMOTE_SSH_SYNC_DIR} && rsync" \
+    "${SSH_SYNC_SOURCE}" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_SSH_SYNC_DIR}/"
+else
+  echo "Skipping SSH sync (SYNC_MAC_SSH=${SYNC_MAC_SSH})."
+fi
 
 LOG_DIR="$REPO_ROOT/logs"
 mkdir -p "$LOG_DIR"
@@ -89,6 +120,8 @@ git push origin "$CURRENT_BRANCH"
 [[ -f "$SSH_KEY_PATH" ]] || die "SSH key not found: $SSH_KEY_PATH"
 KEY_FILENAME="$(basename "$SSH_KEY_PATH")"
 REMOTE_KEY_PATH="${REMOTE_KEY_CACHE}/${KEY_FILENAME}"
+
+ensure_docker_context
 
 echo "Copying key to remote cache: ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_KEY_PATH}"
 ssh "${REMOTE_USER}@${REMOTE_HOST}" "mkdir -p $REMOTE_KEY_CACHE"
