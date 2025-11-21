@@ -18,6 +18,8 @@ REPO_PATH=${REPO_PATH:-"$HOME/dev/github/SlotMap"}
 SANDBOX_PATH=${SANDBOX_PATH:-"$HOME/dev/devcontainers/SlotMap"}
 KEY_CACHE=${KEY_CACHE:-"$HOME/macbook_ssh_keys"}
 SSH_SUBDIR=".devcontainer/ssh"
+DEV_IMAGE=${DEVCONTAINER_IMAGE:-"devcontainer:local"}
+BASE_IMAGE=${DEVCONTAINER_BASE_IMAGE:-"dev-base:local"}
 
 echo "[remote] Repo source       : $REPO_PATH"
 echo "[remote] Sandbox workspace : $SANDBOX_PATH"
@@ -49,6 +51,15 @@ else
   echo "         Copy your public key to $KEY_CACHE before rerunning."
   exit 1
 fi
+
+echo "[remote] Ensuring baked images (base: $BASE_IMAGE, dev: $DEV_IMAGE)..."
+pushd "$SANDBOX_PATH" >/dev/null
+if ! docker image inspect "$DEV_IMAGE" >/dev/null 2>&1; then
+  docker buildx bake devcontainer --set TAG="$DEV_IMAGE" --set BASE_TAG="$BASE_IMAGE"
+else
+  echo "[remote] Found $DEV_IMAGE locally; skipping bake."
+fi
+popd >/dev/null
 
 CONTAINER_USER=${CONTAINER_USER:-$(id -un)}
 CONTAINER_UID=${CONTAINER_UID:-$(id -u)}
