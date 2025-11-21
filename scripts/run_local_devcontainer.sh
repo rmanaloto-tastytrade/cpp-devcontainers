@@ -55,7 +55,7 @@ fi
 echo "[remote] Ensuring baked images (base: $BASE_IMAGE, dev: $DEV_IMAGE)..."
 pushd "$SANDBOX_PATH" >/dev/null
 if ! docker image inspect "$DEV_IMAGE" >/dev/null 2>&1; then
-  docker buildx bake devcontainer --set TAG="$DEV_IMAGE" --set BASE_TAG="$BASE_IMAGE"
+  docker buildx bake -f "$SANDBOX_PATH/.devcontainer/docker-bake.hcl" devcontainer --set TAG="$DEV_IMAGE" --set BASE_TAG="$BASE_IMAGE"
 else
   echo "[remote] Found $DEV_IMAGE locally; skipping bake."
 fi
