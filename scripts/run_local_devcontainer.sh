@@ -69,8 +69,9 @@ devcontainer up \
 CONTAINER_ID=$(docker ps --filter "label=devcontainer.local_folder=${SANDBOX_PATH}" -q | head -n1)
 if [[ -n "$CONTAINER_ID" ]]; then
   echo "[remote] Container $CONTAINER_ID online. Inspecting filesystem (sanity check)..."
-  docker exec "$CONTAINER_ID" sh -c 'echo "--- /tmp ---"; ls -al /tmp | head'
-  docker exec "$CONTAINER_ID" sh -c 'echo "--- /workspaces/SlotMap (top level) ---"; ls -al /workspaces/SlotMap | head'
+docker exec "$CONTAINER_ID" sh -c 'echo "--- /tmp ---"; ls -al /tmp | head'
+docker exec "$CONTAINER_ID" sh -c 'echo "--- /workspaces/SlotMap (top level) ---"; ls -al /workspaces/SlotMap | head'
+docker exec "$CONTAINER_ID" sh -c 'echo "--- LLVM packages list ---"; if [ -f /opt/llvm-packages-21.txt ]; then head /opt/llvm-packages-21.txt; else echo "No /opt/llvm-packages-21.txt"; fi'
 else
   echo "[remote] WARNING: unable to locate container for inspection."
 fi
