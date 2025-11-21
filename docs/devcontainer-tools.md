@@ -22,6 +22,7 @@ Installed via `apt-get` in the first layer:
 | --- | --- | --- |
 | Git | Latest stable via `ppa:git-core/ppa` |
 | CMake | latest from Kitware APT |
+| GNU Make | 4.4.1 compiled from ftp.gnu.org |
 | Ninja | v1.13.1 GitHub release (curl with retry) |
 | Mold | v2.40.4 GitHub release (`mold` + `ld.mold`) |
 | GitHub CLI | v2.83.1 GitHub release |
@@ -31,7 +32,7 @@ Installed via `apt-get` in the first layer:
 | Node.js / npm | Official Node.js tarball v25.2.1 |
 | Linux perf | `linux-tools-common` + `linux-tools-generic` (+ best-effort `linux-tools-$(uname -r)`) |
 | binutils + gdb | Built from source (`bminor/binutils-gdb` tag `binutils-2_45_1`) |
-| LLVM extras | clang-tools, clangd, clang-tidy, libclang-rt, polly, libfuzzer, libomp, libclc, libunwind, MLIR, BOLT, flang, libllvmlibc |
+| LLVM extras | Installed via `llvm.sh ${LLVM_VERSION} all` plus additional packages (MLIR, BOLT, flang, libclc, libllvmlibc); package list logged to `/opt/llvm-packages-21.txt` |
 | uv / ruff / ty | Astral install scripts (`/usr/local/bin`) |
 | pixi | Official installer, binary moved to `/usr/local/bin` |
 
@@ -60,6 +61,7 @@ Environment variables:
 | `/opt/vcpkg` | vcpkg clone/tools |
 | `/opt/vcpkg-downloads` | vcpkg download cache |
 | `/opt/mrdocs` | MRDocs install |
+| `/opt/llvm-packages-21.txt` | Snapshot of `apt-cache search 21` after enabling apt.llvm.org |
 
 ### Verification Commands
 Run these inside the devcontainer to confirm key tools are available:
@@ -68,6 +70,7 @@ clang++-21 --version
 gcc-14 --version
 git --version
 cmake --version
+make --version
 ninja --version
 node --version
 npm --version
