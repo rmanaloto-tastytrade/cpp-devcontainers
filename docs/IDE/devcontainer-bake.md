@@ -80,6 +80,7 @@ flowchart TB
 - Always run `scripts/pre_commit.sh` (bake/devcontainer validation + lint) before committing/pushing; only trigger remote rebuild scripts after these checks pass.
 - Prefer Dev Container features for common tooling (SSH, shells, helpers) before adding Dockerfile steps; use bake args/targets for env-specific tweaks to keep the Dockerfile lean.
 - Validation order: 1) run `scripts/pre_commit.sh` locally and fix issues; 2) commit/push; 3) trigger and wait for the Devcontainer Lint workflow to succeed; 4) only then run remote deploy/rebuild scripts.
+ - Follow the sequence without waiting for manual approval between steps; only halt if a validation fails or the user says to stop.
 
 ### Validation / linting flow (local)
 - Run `scripts/pre_commit.sh` before committing:
