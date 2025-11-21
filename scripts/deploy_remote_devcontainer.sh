@@ -27,9 +27,9 @@ LOCAL_USER="$(id -un)"
 REMOTE_HOST="c24s1.ch2"
 REMOTE_USER="rmanaloto"
 SSH_KEY_PATH="$HOME/.ssh/id_ed25519.pub"
-REMOTE_KEY_CACHE="$HOME/macbook_ssh_keys"
-REMOTE_REPO_PATH="$HOME/dev/github/SlotMap"
-REMOTE_SANDBOX_PATH="$HOME/dev/devcontainers/SlotMap"
+REMOTE_KEY_CACHE=""
+REMOTE_REPO_PATH=""
+REMOTE_SANDBOX_PATH=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -69,6 +69,11 @@ if [[ -z "$REMOTE_USER" ]]; then
     REMOTE_USER="$LOCAL_USER"
   fi
 fi
+
+REMOTE_HOME=${REMOTE_HOME:-"/home/${REMOTE_USER}"}
+REMOTE_KEY_CACHE=${REMOTE_KEY_CACHE:-"${REMOTE_HOME}/macbook_ssh_keys"}
+REMOTE_REPO_PATH=${REMOTE_REPO_PATH:-"${REMOTE_HOME}/dev/github/SlotMap"}
+REMOTE_SANDBOX_PATH=${REMOTE_SANDBOX_PATH:-"${REMOTE_HOME}/dev/devcontainers/SlotMap"}
 
 LOG_DIR="$REPO_ROOT/logs"
 mkdir -p "$LOG_DIR"
