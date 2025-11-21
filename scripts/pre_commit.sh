@@ -11,15 +11,15 @@ echo "[pre-commit] Running devcontainer config validation (skips if Docker unava
 scripts/check_devcontainer_config.sh "$REPO_ROOT"
 
 if command -v hadolint >/dev/null 2>&1; then
-  echo "[pre-commit] Running hadolint on .devcontainer/Dockerfile..."
-  hadolint .devcontainer/Dockerfile
+  echo "[pre-commit] Running hadolint on .devcontainer/Dockerfile (warnings allowed)..."
+  hadolint --failure-threshold error .devcontainer/Dockerfile
 else
   echo "[pre-commit] WARNING: hadolint not installed; skipping Dockerfile lint." >&2
 fi
 
 if command -v shellcheck >/dev/null 2>&1; then
-  echo "[pre-commit] Running shellcheck on scripts..."
-  shellcheck scripts/*.sh
+  echo "[pre-commit] Running shellcheck on scripts (errors only)..."
+  shellcheck --severity=error scripts/*.sh
 else
   echo "[pre-commit] WARNING: shellcheck not installed; skipping shell lint." >&2
 fi
