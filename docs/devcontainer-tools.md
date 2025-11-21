@@ -13,7 +13,8 @@ This document captures the contents of `.devcontainer/Dockerfile`, similar in sp
 ### Core Packages (APT)
 Installed via `apt-get` in the first layer:
 - Build chain: `build-essential`, full LLVM 21 stack (clang/clangd/clang-tidy, lld, lldb, MLIR, BOLT, flang, libomp, libunwind, libclc, libfuzzer, polly, libllvmlibc, doc/examples packages), `gcc-14` (from Ubuntu Toolchain PPA), `binutils`
-- Tooling: `curl`, `wget`, `sudo`, `pkg-config`, `bash-completion`, `zsh`, `cppcheck`, `valgrind`, `gdb`, `graphviz`, `doxygen`, `rsync`, `python3` (+pip/venv), `tzdata`, `xz-utils`, `unzip`, `zip`, `tar`
+- Tooling: `curl`, `wget`, `sudo`, `pkg-config`, `bash-completion`, `zsh`, `graphviz`, `doxygen`, `rsync`, `python3` (+pip/venv), `tzdata`, `xz-utils`, `unzip`, `zip`, `tar`
+- Debugging helpers: `debuginfod`, `debuginfod-client`
 - vcpkg manifest prerequisites: `autoconf`, `automake`, `libtool`, `m4`, `autoconf-archive`, `patchelf`
 - SSH / misc: `openssh-client`, `ca-certificates`, `gnupg`
 
