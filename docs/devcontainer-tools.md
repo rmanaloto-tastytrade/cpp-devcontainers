@@ -27,6 +27,7 @@ Installed via `apt-get` in the first layer:
 | Mold | v2.40.4 GitHub release (`mold` + `ld.mold`) |
 | GitHub CLI | v2.83.1 GitHub release |
 | IWYU | `clang_21` branch built from source (matches LLVM 21 install) |
+| Clang P2996 | Bloomberg `clang-p2996` branch (reflection prototype) |
 | MRDocs | v0.8.0 binary release |
 | Mermaid CLI | installed globally via npm |
 | Node.js / npm | Official Node.js tarball v25.2.1 |
@@ -62,6 +63,7 @@ Environment variables:
 | `/opt/vcpkg-downloads` | vcpkg download cache |
 | `/opt/mrdocs` | MRDocs install |
 | `/opt/llvm-packages-21.txt` | Snapshot of `apt-cache search 21` after enabling apt.llvm.org |
+| `/opt/clang-p2996` | Bloomberg Clang P2996 installation root |
 
 ### Verification Commands
 Run these inside the devcontainer to confirm key tools are available:
@@ -80,6 +82,7 @@ gdb --version
 objdump --version
 clangd --version
 flang-21 --version
+clang-p2996 --version
 perf --version || perf --help
 ccache --version
 sccache --version
