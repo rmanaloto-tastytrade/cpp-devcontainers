@@ -80,6 +80,7 @@ echo "[remote] Removing previous sandbox..."
 rm -rf "$SANDBOX_PATH"
 mkdir -p "$SANDBOX_PATH"
 mkdir -p "$WORKSPACE_PATH"
+mkdir -p "$WORKSPACE_PATH"
 
 echo "[remote] Copying repo into sandbox..."
 rsync -a --delete "$REPO_PATH"/ "$SANDBOX_PATH"/
