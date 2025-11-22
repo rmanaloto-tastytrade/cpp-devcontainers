@@ -123,10 +123,11 @@ fi
 
 # Resolve remote uid/gid for the container user if not provided
 if [[ -z "$CONTAINER_UID" || -z "$CONTAINER_GID" ]]; then
-  REMOTE_ID=$(ssh "${REMOTE_USER}@${REMOTE_HOST}" "id -u ${CONTAINER_USER} && id -g ${CONTAINER_USER}" 2>/dev/null | paste -sd ' ')
-  if [[ -n "$REMOTE_ID" ]]; then
-    CONTAINER_UID="${CONTAINER_UID:-$(echo "$REMOTE_ID" | awk '{print $1}')}"
-    CONTAINER_GID="${CONTAINER_GID:-$(echo "$REMOTE_ID" | awk '{print $2}')}"
+  REMOTE_UID=$(ssh "${REMOTE_USER}@${REMOTE_HOST}" "id -u ${CONTAINER_USER}" 2>/dev/null || true)
+  REMOTE_GID=$(ssh "${REMOTE_USER}@${REMOTE_HOST}" "id -g ${CONTAINER_USER}" 2>/dev/null || true)
+  if [[ -n "$REMOTE_UID" && -n "$REMOTE_GID" ]]; then
+    CONTAINER_UID="${CONTAINER_UID:-$REMOTE_UID}"
+    CONTAINER_GID="${CONTAINER_GID:-$REMOTE_GID}"
   else
     echo "WARNING: Could not resolve uid/gid for ${CONTAINER_USER} on ${REMOTE_HOST}; falling back to local uid/gid."
     CONTAINER_UID="${CONTAINER_UID:-$(id -u)}"
