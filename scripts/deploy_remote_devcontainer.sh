@@ -99,9 +99,7 @@ REMOTE_KEY_CACHE=${REMOTE_KEY_CACHE:-"${REMOTE_HOME}/devcontainers/ssh_keys"}
 REMOTE_REPO_PATH=${REMOTE_REPO_PATH:-"${REMOTE_HOME}/dev/github/SlotMap"}
 REMOTE_SANDBOX_PATH=${REMOTE_SANDBOX_PATH:-"${REMOTE_HOME}/dev/devcontainers/SlotMap"}
 REMOTE_SSH_SYNC_DIR=${REMOTE_SSH_SYNC_DIR:-"${REMOTE_HOME}/devcontainers/ssh_keys"}
-if [[ -z "$REMOTE_WORKSPACE_PATH" ]]; then
-  REMOTE_WORKSPACE_PATH="/home/${CONTAINER_USER}/dev/devcontainers/workspace"
-fi
+REMOTE_WORKSPACE_PATH=${REMOTE_WORKSPACE_PATH:-"${REMOTE_HOME}/dev/devcontainers/SlotMap"}
 
 ensure_docker_context() {
   if [[ -z "$DOCKER_CONTEXT" ]]; then
