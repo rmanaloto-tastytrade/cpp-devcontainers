@@ -31,6 +31,7 @@ WORKSPACE_PATH=${WORKSPACE_PATH:-"/home/${CONTAINER_USER}/dev/devcontainers/work
 echo "[remote] Repo source       : $REPO_PATH"
 echo "[remote] Sandbox workspace : $SANDBOX_PATH"
 echo "[remote] Mac key cache     : $KEY_CACHE"
+echo "[remote] Workspace mount   : $WORKSPACE_PATH"
 echo
 
 if [[ -n "$DOCKER_CONTEXT" ]]; then
@@ -78,6 +79,7 @@ ensure_devcontainer_cli() {
 echo "[remote] Removing previous sandbox..."
 rm -rf "$SANDBOX_PATH"
 mkdir -p "$SANDBOX_PATH"
+mkdir -p "$WORKSPACE_PATH"
 
 echo "[remote] Copying repo into sandbox..."
 rsync -a --delete "$REPO_PATH"/ "$SANDBOX_PATH"/
@@ -145,7 +147,7 @@ devcontainer up \
   --workspace-folder "$SANDBOX_PATH" \
   --remove-existing-container \
   --build-no-cache \
-  --mount "source=${WORKSPACE_PATH},target=/home/${CONTAINER_USER}/workspace,type=bind"
+  --mount "type=bind,source=${WORKSPACE_PATH},target=/home/${CONTAINER_USER}/workspace,consistency=cached"
 
 CONTAINER_ID=$(docker ps --filter "label=devcontainer.local_folder=${SANDBOX_PATH}" -q | head -n1)
 if [[ -n "$CONTAINER_ID" ]]; then
