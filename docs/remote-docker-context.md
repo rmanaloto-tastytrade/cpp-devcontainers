@@ -24,7 +24,7 @@ docker context create c0802s4 --docker "host=ssh://<remote-user>@c0802s4.ny5"
 Use the context when running scripts or set `DOCKER_CONTEXT=<context-name>`. The deploy script accepts `--docker-context` and will create the context if missing.
 
 ## User/UID/GID
-The container user is supplied via the scripts. By default, `deploy_remote_devcontainer.sh` derives a Linux-safe username/uid/gid from your local (Mac) identity; override via `CONTAINER_USER`, `CONTAINER_UID`, `CONTAINER_GID` if needed. When running `run_local_devcontainer.sh` directly on a host, defaults follow the current host user. Keep container uid/gid aligned with your Git identity so file ownership stays consistent across hosts.
+The container user is supplied via the scripts. By default, `deploy_remote_devcontainer.sh` aligns to the **remote host user** (uid/gid resolved over SSH); override via `CONTAINER_USER`, `CONTAINER_UID`, `CONTAINER_GID` if needed. When running `run_local_devcontainer.sh` directly on a host, defaults follow the current host user. Keep container uid/gid aligned with your Git identity so file ownership stays consistent across hosts.
 
 ## SSH Keys for Git
 - Do **not** overwrite the remote `~/.ssh`. Keep your Mac keys under a dedicated remote path, e.g., `~/devcontainers/ssh_keys`.

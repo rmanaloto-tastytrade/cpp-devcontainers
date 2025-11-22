@@ -41,14 +41,10 @@ SSH_SYNC_SOURCE="${SSH_SYNC_SOURCE:-"$HOME/.ssh/"}"
 SYNC_MAC_SSH="${SYNC_MAC_SSH:-1}"
 DOCKER_CONTEXT="${DOCKER_CONTEXT:-}"
 RSYNC_SSH="${RSYNC_SSH:-ssh -o StrictHostKeyChecking=accept-new}"
-# Derive local identity defaults (sanitized for Linux user naming)
-LOCAL_USER="$(id -un)"
-LOCAL_UID="$(id -u)"
-LOCAL_GID="$(id -g)"
-LOCAL_USER_SAFE="${LOCAL_USER//@/_}"
-CONTAINER_USER="${CONTAINER_USER:-$LOCAL_USER_SAFE}"
-CONTAINER_UID="${CONTAINER_UID:-$LOCAL_UID}"
-CONTAINER_GID="${CONTAINER_GID:-$LOCAL_GID}"
+# Container identity defaults: use the remote host user/uid/gid unless overridden
+CONTAINER_USER="${CONTAINER_USER:-$REMOTE_USER}"
+CONTAINER_UID="${CONTAINER_UID:-}"
+CONTAINER_GID="${CONTAINER_GID:-}"
 REMOTE_WORKSPACE_PATH="${REMOTE_WORKSPACE_PATH:-""}"
 
 while [[ $# -gt 0 ]]; do
@@ -123,6 +119,19 @@ if [[ "${SYNC_MAC_SSH}" == "1" ]]; then
     "${SSH_SYNC_SOURCE}" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_SSH_SYNC_DIR}/"
 else
   echo "Skipping SSH sync (SYNC_MAC_SSH=${SYNC_MAC_SSH})."
+fi
+
+# Resolve remote uid/gid for the container user if not provided
+if [[ -z "$CONTAINER_UID" || -z "$CONTAINER_GID" ]]; then
+  REMOTE_ID=$(ssh "${REMOTE_USER}@${REMOTE_HOST}" "id -u ${CONTAINER_USER} && id -g ${CONTAINER_USER}" 2>/dev/null | paste -sd ' ')
+  if [[ -n "$REMOTE_ID" ]]; then
+    CONTAINER_UID="${CONTAINER_UID:-$(echo "$REMOTE_ID" | awk '{print $1}')}"
+    CONTAINER_GID="${CONTAINER_GID:-$(echo "$REMOTE_ID" | awk '{print $2}')}"
+  else
+    echo "WARNING: Could not resolve uid/gid for ${CONTAINER_USER} on ${REMOTE_HOST}; falling back to local uid/gid."
+    CONTAINER_UID="${CONTAINER_UID:-$(id -u)}"
+    CONTAINER_GID="${CONTAINER_GID:-$(id -g)}"
+  fi
 fi
 
 LOG_DIR="$REPO_ROOT/logs"
