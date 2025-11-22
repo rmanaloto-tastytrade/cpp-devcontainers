@@ -5,9 +5,9 @@ CURRENT_USER="${DEVCONTAINER_USER:-$(id -un)}"
 CURRENT_GROUP="$(id -gn "$CURRENT_USER" 2>/dev/null || id -gn)"
 WORKSPACE_DIR="${WORKSPACE_FOLDER:-/home/${CURRENT_USER}/workspace}"
 
-sudo chown -R "${CURRENT_USER}:${CURRENT_GROUP}" /opt/vcpkg || true
-sudo chown -R "${CURRENT_USER}:${CURRENT_GROUP}" /opt/vcpkg/downloads || true
-sudo chown -R "${CURRENT_USER}:${CURRENT_GROUP}" "${WORKSPACE_DIR}" || true
+sudo -n chown -R "${CURRENT_USER}:${CURRENT_GROUP}" /opt/vcpkg || true
+sudo -n chown -R "${CURRENT_USER}:${CURRENT_GROUP}" /opt/vcpkg/downloads || true
+sudo -n chown -R "${CURRENT_USER}:${CURRENT_GROUP}" "${WORKSPACE_DIR}" || true
 
 if ! command -v clang++-21 >/dev/null 2>&1; then
   echo "[post_create] ERROR: clang++-21 not found in PATH" >&2
