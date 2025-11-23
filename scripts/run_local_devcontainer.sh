@@ -75,8 +75,18 @@ ensure_devcontainer_cli() {
 
 [[ -d "$REPO_PATH" ]] || { echo "[remote] ERROR: Repo path not found."; exit 1; }
 if [[ -z "${SSH_AUTH_SOCK:-}" || ! -S "${SSH_AUTH_SOCK:-}" ]]; then
-  echo "[remote] ERROR: SSH_AUTH_SOCK is not set or not a socket. Start ssh-agent on the host and add your keys before running this script." >&2
-  exit 1
+  echo "[remote] SSH_AUTH_SOCK not set; starting a fresh ssh-agent..."
+  eval "$(ssh-agent -s)"
+  DEFAULT_HOST_KEY="${HOST_SSH_KEY_PATH:-$HOME/.ssh/github_key}"
+  if [[ -f "$DEFAULT_HOST_KEY" ]]; then
+    if ssh-add "$DEFAULT_HOST_KEY" >/dev/null 2>&1; then
+      echo "[remote] Added key $DEFAULT_HOST_KEY to agent."
+    else
+      echo "[remote] WARNING: Failed to add $DEFAULT_HOST_KEY to agent (maybe passphrase-protected)." >&2
+    fi
+  else
+    echo "[remote] WARNING: No host key found at $DEFAULT_HOST_KEY to add to agent." >&2
+  fi
 fi
 
 [[ -d "$KEY_CACHE" ]] || { echo "[remote] WARNING: Key cache $KEY_CACHE missing; creating it."; mkdir -p "$KEY_CACHE"; }
