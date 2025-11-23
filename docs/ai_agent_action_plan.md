@@ -73,9 +73,25 @@ If the "Remote-Resident" workflow is selected (per user request):
 
 ### Instructions
 
-1. **Analyze:** Read `.devcontainer/Dockerfile`.
-2. **Identify:** Sections installing `sshd`, `node`, `gh`, `awscli`.
-3. **Modify:** Add corresponding features to `.devcontainer/devcontainer.json`.
+1. **Analyze:**### Task 6: Adopt Devcontainer Features & Clean Dockerfile
+1. **Modify:** Update `devcontainer.json` to include features:
+
+    ```json
+    "features": {
+        "ghcr.io/devcontainers/features/sshd:1": { "version": "latest" },
+        "ghcr.io/devcontainers/features/common-utils:2": { "username": "slotmap", "userUid": 1000, "userGid": 1000 },
+        "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/devcontainers/features/aws-cli:1": {},
+        "ghcr.io/devcontainers/features/python:1": {}
+    }
+    ```
+
+2. **Refactor Dockerfile:**
+    * **Remove:** `ARG USERNAME`, `useradd`, `groupadd`, `sudo` setup (handled by `common-utils`).
+    * **Remove:** Manual `node`, `gh`, `awscli`, `python` installation stages.
+    * **Retain:** `clang-p2996`, `mrdocs`, `iwyu`, `vcpkg` setup.
+3. **Verify:** Rebuild container (`devcontainer build`) and check `node --version`, `gh --version`, etc.json`.
     * `ghcr.io/devcontainers/features/sshd:1`
     * `ghcr.io/devcontainers/features/node:1`
     * `ghcr.io/devcontainers/features/github-cli:1`

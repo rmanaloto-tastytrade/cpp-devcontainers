@@ -165,6 +165,11 @@ You can run the `devcontainer` CLI locally and point it to the remote Docker eng
 
 **Implementation Plan:**
 
+* [Docker Contexts](https://docs.docker.com/engine/context/working-with-contexts/)
+* [Devcontainer CLI Reference](https://github.com/devcontainers/cli)
+
+**Implementation Plan:**
+
 1. Eliminate `run_local_devcontainer.sh`.
 2. Run `devcontainer up --docker-host ssh://user@remote` directly from your local machine.
 3. Mount the source code using a named volume or let the CLI handle the git clone (using "Clone Repository in Container Volume" pattern).
