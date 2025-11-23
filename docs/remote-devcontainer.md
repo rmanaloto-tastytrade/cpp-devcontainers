@@ -82,5 +82,6 @@ If SSH fails with `Connection reset by peer`, verify that `/home/<remote-usernam
 - Multiple developers can share the same remote host: each user copies their `.pub` files into their own `~/macbook_ssh_keys`, and the scripts remain parameterized (`--remote-user`, `--ssh-key`, etc.).
 - `logs/` contains timestamped execution transcripts for traceability. Include them in bug reports or when auditing remote builds.
 - GitHub SSH fallback to port 443 is configured per GitHub guidance (“Using SSH over the HTTPS port”) and we prefer agent forwarding when possible (“Using SSH agent forwarding”).
+- We disable SSH hostname canonicalization for `github.com` inside the container to avoid DNS suffix rewrites (e.g., `github.com.tastyworks.com`), which break GitHub SSH; see OpenSSH `ssh_config(5)` for `CanonicalizeHostname`.
 
 For details on the helper scripts themselves see `scripts/deploy_remote_devcontainer.sh` (local) and `scripts/run_local_devcontainer.sh` (remote). Both scripts print verbose status messages so you can follow the entire workflow from your terminal or CI logs.

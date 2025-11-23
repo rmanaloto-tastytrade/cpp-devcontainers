@@ -47,6 +47,7 @@ fi
   echo "  Hostname ssh.github.com"
   echo "  Port 443"
   echo "  User git"
+  echo "  CanonicalizeHostname no  # avoid company DNS suffixes (e.g., github.com.tastyworks.com)"
 } >> "$SSH_CONFIG_FILE"
 chmod 600 "$SSH_CONFIG_FILE"
 
