@@ -29,6 +29,15 @@ else
   echo "[post_create] WARNING: No public keys found under $SSH_SOURCE"
 fi
 
+# Sanitize macOS SSH config (UseKeychain is unsupported on Linux)
+SSH_CONFIG_FILE="$SSH_TARGET/config"
+if [[ -f "$SSH_CONFIG_FILE" ]] && grep -q "UseKeychain" "$SSH_CONFIG_FILE"; then
+  cp "$SSH_CONFIG_FILE" "$SSH_TARGET/config.macbak"
+  grep -v "UseKeychain" "$SSH_TARGET/config.macbak" > "$SSH_CONFIG_FILE"
+  chmod 600 "$SSH_CONFIG_FILE"
+  echo "[post_create] Filtered UseKeychain from ~/.ssh/config (backup at ~/.ssh/config.macbak)."
+fi
+
 BUILD_DIR="${WORKSPACE_DIR}/build/clang-debug"
 CACHE_FILE="${BUILD_DIR}/CMakeCache.txt"
 
