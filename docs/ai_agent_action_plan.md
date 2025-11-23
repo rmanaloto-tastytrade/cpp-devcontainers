@@ -25,7 +25,8 @@ This repository contains a C++ project (`SlotMap`) with a custom devcontainer se
 2. **Modify:** Locate the `rsync` command (approx line 121).
 3. **Action:** Change the source/filter to ONLY include `*.pub` files or explicitly exclude private keys.
     * *Hint:* Use `--include='*.pub' --exclude='*'`.
-4. **Verify:** Run a dry-run rsync command to ensure only public keys are selected.
+4. **Update Test Script:** Modify `scripts/test_devcontainer_ssh.sh` to stop using `-i $HOME/.ssh/id_ed25519` for the internal GitHub check. It should rely on the forwarded agent or `gh` CLI.
+5. **Verify:** Run a dry-run rsync command to ensure only public keys are selected.
 
 ---
 
