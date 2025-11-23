@@ -60,6 +60,7 @@ SSH_CMD=(ssh -vvv
   -o IdentitiesOnly=yes
   -o UserKnownHostsFile="$KNOWN_HOSTS_FILE"
   -o StrictHostKeyChecking=no
+  -o ConnectTimeout=10
   -p "$PORT"
   "${USER_NAME}@${HOST}"
   "echo SSH_OK")
@@ -97,7 +98,7 @@ for bin in clang++-21 ninja cmake mrdocs vcpkg; do
 done
 echo "[ssh-remote] ssh -T git@github.com (expect success message)"
 # Use a clean config to avoid macOS-only options like UseKeychain
-ssh -F /dev/null -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -T git@github.com || true
+ssh -F /dev/null -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=10 -T git@github.com || true
 exit $failed
 REMOTE
 )
@@ -107,6 +108,7 @@ SSH_CMD_REMOTE=(ssh
   -o IdentitiesOnly=yes
   -o UserKnownHostsFile="$KNOWN_HOSTS_FILE"
   -o StrictHostKeyChecking=no
+  -o ConnectTimeout=15
   -p "$PORT"
   "${USER_NAME}@${HOST}"
   "$REMOTE_CHECK_CMD")
