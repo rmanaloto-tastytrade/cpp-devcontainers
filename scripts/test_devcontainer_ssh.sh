@@ -89,16 +89,24 @@ if sudo -n true >/dev/null 2>&1; then
 else
   echo "[ssh-remote] sudo -n true: FAILED"; failed=1
 fi
-for bin in clang++-21 ninja cmake mrdocs vcpkg; do
+for bin in clang++-21 ninja cmake vcpkg; do
   if command -v "$bin" >/dev/null 2>&1; then
     echo "[ssh-remote] found $bin: $(command -v "$bin")"
   else
     echo "[ssh-remote] MISSING $bin"; failed=1
   fi
 done
+# mrdocs may not be on PATH; check explicit location
+if command -v mrdocs >/dev/null 2>&1; then
+  echo "[ssh-remote] found mrdocs: $(command -v mrdocs)"
+elif [[ -x /opt/mrdocs/bin/mrdocs ]]; then
+  echo "[ssh-remote] found mrdocs at /opt/mrdocs/bin/mrdocs (not in PATH)"
+else
+  echo "[ssh-remote] MISSING mrdocs"; failed=1
+fi
 echo "[ssh-remote] ssh -T git@github.com (expect success message)"
 # Use a clean config to avoid macOS-only options like UseKeychain
-ssh -F /dev/null -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=10 -T git@github.com || true
+ssh -F /dev/null -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=10 -T git@github.com || true
 exit $failed
 REMOTE
 )
@@ -106,7 +114,7 @@ REMOTE
 SSH_CMD_REMOTE=(ssh
   -i "$KEY_PATH"
   -o IdentitiesOnly=yes
-  -o UserKnownHostsFile="$KNOWN_HOSTS_FILE"
+  -o UserKnownHostsFile=/dev/null
   -o StrictHostKeyChecking=no
   -o ConnectTimeout=15
   -p "$PORT"
