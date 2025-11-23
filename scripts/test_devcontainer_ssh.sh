@@ -74,21 +74,31 @@ fi
 
 # Additional validation inside the container (tools, sudo, workspace perms, GitHub SSH)
 REMOTE_CHECK_CMD=$(cat <<'REMOTE'
-set -e
+failed=0
 echo "[ssh-remote] whoami: $(whoami)"
 echo "[ssh-remote] id: $(id)"
 echo "[ssh-remote] pwd: $(pwd)"
-echo "[ssh-remote] workspace writable?" && test -w "$HOME/workspace" && echo "yes" || { echo "no"; exit 1; }
-echo "[ssh-remote] sudo -n true" && sudo -n true && echo "sudo OK" || { echo "sudo FAILED"; exit 1; }
+if test -w "$HOME/workspace"; then
+  echo "[ssh-remote] workspace writable: yes"
+else
+  echo "[ssh-remote] workspace writable: NO"; failed=1
+fi
+if sudo -n true >/dev/null 2>&1; then
+  echo "[ssh-remote] sudo -n true: OK"
+else
+  echo "[ssh-remote] sudo -n true: FAILED"; failed=1
+fi
 for bin in clang++-21 ninja cmake mrdocs vcpkg; do
   if command -v "$bin" >/dev/null 2>&1; then
     echo "[ssh-remote] found $bin: $(command -v "$bin")"
   else
-    echo "[ssh-remote] MISSING $bin" && exit 1
+    echo "[ssh-remote] MISSING $bin"; failed=1
   fi
 done
-echo "[ssh-remote] ssh -T git@github.com (expect \"success\" message or exit 1)"
-ssh -T -o StrictHostKeyChecking=no -o BatchMode=yes git@github.com || true
+echo "[ssh-remote] ssh -T git@github.com (expect success message)"
+# Use a clean config to avoid macOS-only options like UseKeychain
+ssh -F /dev/null -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -T git@github.com || true
+exit $failed
 REMOTE
 )
 
