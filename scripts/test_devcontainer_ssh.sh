@@ -52,7 +52,10 @@ ssh-keygen -lf "$KEY_PATH" || true
 
 if [[ "$CLEAR_KNOWN_HOST" -eq 1 ]]; then
   echo "[ssh-test] Clearing existing host key for [$HOST]:$PORT from $KNOWN_HOSTS_FILE"
+  CANON_HOST=$(ssh -G "$HOST" 2>/dev/null | awk '/^hostname / {print $2}' | head -n1)
+  [[ -z "$CANON_HOST" ]] && CANON_HOST="$HOST"
   ssh-keygen -R "[$HOST]:$PORT" -f "$KNOWN_HOSTS_FILE" >/dev/null 2>&1 || true
+  ssh-keygen -R "[$CANON_HOST]:$PORT" -f "$KNOWN_HOSTS_FILE" >/dev/null 2>&1 || true
 fi
 
 SSH_CMD=(ssh -vvv
