@@ -109,12 +109,26 @@ else
 fi
 echo "[ssh-remote] ssh -T git@github.com (expect success message)"
 # Use the agent (`SSH_AUTH_SOCK`) rather than a bind-mounted private key. Try port 22 first, then fall back to 443 per GitHub docs.
-if ssh -o BatchMode=yes -o ConnectTimeout=10 -T git@github.com; then
+attempt_github_ssh() {
+  local port="$1"; shift
+  local host="$1"; shift
+  local output status
+  output="$(ssh -o BatchMode=yes -o ConnectTimeout=10 -p "$port" -o Hostname="$host" -T git@github.com 2>&1)"
+  status=$?
+  if echo "$output" | grep -qi "successfully authenticated"; then
+    echo "$output"
+    return 0
+  fi
+  echo "$output"
+  return $status
+}
+
+if attempt_github_ssh 22 github.com; then
   echo "[ssh-remote] github.com:22 OK"
 else
   status=$?
   echo "[ssh-remote] github.com:22 failed (exit $status); trying ssh.github.com:443"
-  if ssh -o BatchMode=yes -o ConnectTimeout=10 -p 443 -o Hostname=ssh.github.com -T git@github.com; then
+  if attempt_github_ssh 443 ssh.github.com; then
     echo "[ssh-remote] ssh.github.com:443 OK"
   else
     status2=$?
