@@ -71,3 +71,40 @@ else
   echo "[ssh-test] FAILED" >&2
   exit 1
 fi
+
+# Additional validation inside the container (tools, sudo, workspace perms, GitHub SSH)
+REMOTE_CHECK_CMD=$(cat <<'REMOTE'
+set -e
+echo "[ssh-remote] whoami: $(whoami)"
+echo "[ssh-remote] id: $(id)"
+echo "[ssh-remote] pwd: $(pwd)"
+echo "[ssh-remote] workspace writable?" && test -w "$HOME/workspace" && echo "yes" || { echo "no"; exit 1; }
+echo "[ssh-remote] sudo -n true" && sudo -n true && echo "sudo OK" || { echo "sudo FAILED"; exit 1; }
+for bin in clang++-21 ninja cmake mrdocs vcpkg; do
+  if command -v "$bin" >/dev/null 2>&1; then
+    echo "[ssh-remote] found $bin: $(command -v "$bin")"
+  else
+    echo "[ssh-remote] MISSING $bin" && exit 1
+  fi
+done
+echo "[ssh-remote] ssh -T git@github.com (expect \"success\" message or exit 1)"
+ssh -T -o StrictHostKeyChecking=no -o BatchMode=yes git@github.com || true
+REMOTE
+)
+
+SSH_CMD_REMOTE=(ssh
+  -i "$KEY_PATH"
+  -o IdentitiesOnly=yes
+  -o UserKnownHostsFile="$KNOWN_HOSTS_FILE"
+  -o StrictHostKeyChecking=no
+  -p "$PORT"
+  "${USER_NAME}@${HOST}"
+  "$REMOTE_CHECK_CMD")
+
+echo "[ssh-test] Executing remote validation command..."
+if "${SSH_CMD_REMOTE[@]}"; then
+  echo "[ssh-test] Remote validation completed."
+else
+  echo "[ssh-test] Remote validation failed." >&2
+  exit 1
+fi
