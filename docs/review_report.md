@@ -51,6 +51,50 @@ Instead of copying keys, forward your local SSH agent to the container. This all
 3. The `devcontainer` CLI automatically handles forwarding the agent socket into the container.
 4. **Update Tests:** The script `scripts/test_devcontainer_ssh.sh` currently hardcodes usage of `~/.ssh/id_ed25519` inside the container. This must be updated to use the SSH agent (remove `-i` flag or use agent socket) to prevent regression failures.
 
+### Visualizing the Secure Workflow
+
+**1. Inbound SSH (Mac -> Container)**
+The container uses your *public* key (injected at build time) to authenticate you.
+
+```mermaid
+sequenceDiagram
+    participant Mac as Local Mac
+    participant Host as Remote Host (c24s1)
+    participant Container as Devcontainer
+    
+    Note over Mac, Container: Build Phase
+    Mac->>Mac: Read ~/.ssh/id_ed25519.pub
+    Mac->>Container: Inject Public Key into ~/.ssh/authorized_keys
+    
+    Note over Mac, Container: Connect Phase
+    Mac->>Host: SSH Tunnel (Port 9222)
+    Host->>Container: Forward Connection
+    Container->>Mac: Challenge (Auth Request)
+    Mac->>Container: Sign with Private Key (Local)
+    Container->>Mac: Access Granted
+```
+
+**2. Outbound SSH (Container -> GitHub)**
+The container uses *Agent Forwarding* to sign requests using your local Mac's agent. Private keys never leave the Mac.
+
+```mermaid
+sequenceDiagram
+    participant GitHub
+    participant Container as Devcontainer
+    participant Host as Remote Host (c24s1)
+    participant Mac as Local Mac (Agent)
+
+    Container->>GitHub: git push / ssh request
+    GitHub->>Container: Challenge (Sign this!)
+    Container->>Host: Forward Challenge (via Socket)
+    Host->>Mac: Forward Challenge (via SSH Connection)
+    Mac->>Mac: Sign with Private Key (in Memory)
+    Mac->>Host: Return Signature
+    Host->>Container: Return Signature
+    Container->>GitHub: Send Signature
+    GitHub->>Container: Authenticated!
+```
+
 ---
 
 ## 2. Over-Engineering: Custom Orchestration Scripts
