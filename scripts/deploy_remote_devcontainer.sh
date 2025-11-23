@@ -33,6 +33,7 @@ DEFAULT_REMOTE_HOST="${DEFAULT_REMOTE_HOST:-c24s1.ch2}"
 REMOTE_HOST="$DEFAULT_REMOTE_HOST"
 REMOTE_USER="rmanaloto"
 SSH_KEY_PATH="$HOME/.ssh/id_ed25519.pub"
+REMOTE_PORT="${REMOTE_PORT:-9222}"
 REMOTE_KEY_CACHE=""
 REMOTE_REPO_PATH=""
 REMOTE_SANDBOX_PATH=""
@@ -65,6 +66,8 @@ while [[ $# -gt 0 ]]; do
       DOCKER_CONTEXT="$2"; shift 2 ;;
     --remote-workspace)
       REMOTE_WORKSPACE_PATH="$2"; shift 2 ;;
+    --remote-port)
+      REMOTE_PORT="$2"; shift 2 ;;
     -h|--help)
       usage; exit 0 ;;
     --)
@@ -149,6 +152,12 @@ git push origin "$CURRENT_BRANCH"
 [[ -f "$SSH_KEY_PATH" ]] || die "SSH key not found: $SSH_KEY_PATH"
 KEY_FILENAME="$(basename "$SSH_KEY_PATH")"
 REMOTE_KEY_PATH="${REMOTE_KEY_CACHE}/${KEY_FILENAME}"
+PRIVATE_KEY_PATH="${SSH_KEY_PATH%.pub}"
+if [[ "$PRIVATE_KEY_PATH" == "$SSH_KEY_PATH" ]]; then
+  # Caller supplied a private key already
+  PRIVATE_KEY_PATH="$SSH_KEY_PATH"
+fi
+[[ -f "$PRIVATE_KEY_PATH" ]] || die "Private key not found for SSH test: $PRIVATE_KEY_PATH"
 
 ensure_docker_context
 
@@ -180,3 +189,10 @@ KEY_CACHE="$KEY_CACHE" \
 EOF
 
 echo "Remote devcontainer rebuilt via scripts/run_local_devcontainer.sh on ${REMOTE_HOST}."
+echo "Running post-deploy SSH connectivity test from local host..."
+"${REPO_ROOT}/scripts/test_devcontainer_ssh.sh" \
+  --host "${REMOTE_HOST}" \
+  --port "${REMOTE_PORT}" \
+  --user "${CONTAINER_USER}" \
+  --key "${PRIVATE_KEY_PATH}" \
+  --clear-known-host
