@@ -1,0 +1,19 @@
+name: Hardcoded Host/User Guard
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run hardcoded host/user check
+        run: |
+          chmod +x scripts/check_hardcoded_refs.sh
+          scripts/check_hardcoded_refs.sh

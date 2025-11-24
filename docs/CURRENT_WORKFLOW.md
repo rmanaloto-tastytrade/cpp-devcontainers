@@ -4,6 +4,8 @@
 **Status:** Production (with known security issues)
 **Audience:** Human operators and AI agents
 
+> Note: Host/user/port values mentioned below (e.g., c24s1, 9222, rmanaloto) are examples only. Use your own `DEVCONTAINER_REMOTE_HOST/DEVCONTAINER_REMOTE_USER/DEVCONTAINER_SSH_PORT` values when running scripts.
+
 ## Update (2025-01-23)
 - Devcontainer user is the remote host user (`rmanaloto`), not the Mac user.
 - Mac private keys are no longer synced; only host `~/.ssh/*.pub` are staged for container `authorized_keys`.

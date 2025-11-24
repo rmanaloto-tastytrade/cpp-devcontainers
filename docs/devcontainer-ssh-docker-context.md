@@ -2,6 +2,8 @@
 
 This note explains how to make SSH into the devcontainer work when the container runs on a remote Docker engine via SSH context. All agents (Codex, Gemini, Cursor, Copilot, Grok, etc.) must follow this when configuring/building/running the devcontainer.
 
+> Note: Host/user/port values mentioned here (e.g., c24s1.ch2, 9222, rmanaloto) are examples. Replace with your own `DEVCONTAINER_REMOTE_HOST/USER/SSH_PORT` when executing commands.
+
 ## Goals
 - Container runs on a remote host (e.g., `c24s1.ch2`) via Docker SSH context.
 - Container user = remote host user (`rmanaloto` by default), so file ownership matches the host filesystem.

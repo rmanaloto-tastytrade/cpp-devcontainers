@@ -4,6 +4,8 @@
 **Purpose:** Provide unambiguous context to prevent hallucination
 **Last Updated:** 2025-01-22
 
+> Note: Host/user/port strings (e.g., c24s1, 9222, rmanaloto) in this file are examples. Replace with your own `DEVCONTAINER_REMOTE_HOST/DEVCONTAINER_REMOTE_USER/DEVCONTAINER_SSH_PORT` when executing commands.
+
 ---
 
 ## System Facts (Ground Truth)

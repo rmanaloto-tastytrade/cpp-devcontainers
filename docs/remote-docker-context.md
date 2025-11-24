@@ -2,6 +2,8 @@
 
 This document defines the **authoritative** way to build and run the SlotMap devcontainer using a remote Docker engine. All AI agent interactions must follow this document for configuration, build, and run.
 
+> Note: Host/user/port values mentioned here (e.g., c24s1, 9222) are examples. Replace with your own `DEVCONTAINER_REMOTE_HOST/DEVCONTAINER_REMOTE_USER/DEVCONTAINER_SSH_PORT` when following commands.
+
 ## Goals
 - Build and run the devcontainer on remote x86_64 hosts (example: c24s1) via Docker SSH contexts.
 - Keep the devcontainer user aligned with the developer’s identity (uid/gid) for correct file ownership.

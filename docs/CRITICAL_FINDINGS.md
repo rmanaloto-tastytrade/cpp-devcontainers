@@ -3,6 +3,8 @@
 **Review Date:** 2025-01-22
 **Reviewer:** Senior DevOps Engineer & Security Architect
 **Scope:** Remote devcontainer setup, deployment scripts, security architecture
+
+> Note: Host/user/port values mentioned in findings (e.g., c24s1, 9222, rmanaloto) are examples. Substitute your own `DEVCONTAINER_REMOTE_HOST/DEVCONTAINER_REMOTE_USER/DEVCONTAINER_SSH_PORT` when acting on steps.
 **Severity Scale:** 🔴 CRITICAL | ⚠️ HIGH | 🟡 MEDIUM | 🔵 LOW
 
 ---

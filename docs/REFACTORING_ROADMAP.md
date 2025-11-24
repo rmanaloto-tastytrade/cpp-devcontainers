@@ -4,6 +4,8 @@
 **Last Updated:** 2025-01-22
 **Target Completion:** Phased approach (Phase 1: 1 week, Phase 2-3: Optional)
 
+> Note: Host/user/port values (e.g., c24s1, 9222, rmanaloto) in this document are examples. Substitute your own `DEVCONTAINER_REMOTE_HOST/DEVCONTAINER_REMOTE_USER/DEVCONTAINER_SSH_PORT` when running commands.
+
 ---
 
 ## Overview
