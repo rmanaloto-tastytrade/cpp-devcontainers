@@ -18,20 +18,20 @@ local_machine:
   public_key: "~/.ssh/id_ed25519.pub"
 
 remote_host:
-  hostname: "c24s1.ch2"
+  hostname: "<remote_host>"    # example: c24s1.ch2
   os: "Ubuntu 24.04"
-  user: "rmanaloto"
+  user: "<remote_user>"        # example: rmanaloto
   canonical_repo: "~/dev/github/SlotMap"
   sandbox_path: "~/dev/devcontainers/SlotMap"
   workspace_path: "~/dev/devcontainers/workspace"
-  ssh_keys_cache: "~/devcontainers/ssh_keys"
+  ssh_keys_cache: "~/.ssh"     # public keys only; private keys stay on host agent
 
 container:
   image_name: "devcontainer:local"
-  user: "rmanaloto"
-  workspace: "/home/rmanaloto/workspace"
+  user: "<remote_user>"
+  workspace: "/home/<remote_user>/workspace"
   ssh_port_container: 2222
-  ssh_port_host: 9222
+  ssh_port_host: ${DEVCONTAINER_SSH_PORT:-9222}
 ```
 
 ### File Paths (Exact)

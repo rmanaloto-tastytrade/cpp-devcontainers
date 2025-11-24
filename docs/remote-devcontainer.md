@@ -5,7 +5,7 @@ This document describes how the SlotMap devcontainer is deployed on a shared Lin
 ### Goals
 - Keep `/home/<user>/dev/github/SlotMap` as a clean clone that mirrors Git history.
 - Build and run the devcontainer in a sandbox (`~/dev/devcontainers/SlotMap`) that is recreated on every deployment.
-- Use the remote host user (`rmanaloto`) as the devcontainer user (UID/GID aligned with host).
+- Use the remote host user (example `rmanaloto`) as the devcontainer user (UID/GID aligned with host).
 - Rely on the remote host’s SSH agent/keys; only public keys are staged for container `authorized_keys` (no Mac private keys are copied).
 - Provide a single local command (`./scripts/deploy_remote_devcontainer.sh`) that pushes code, copies keys, and rebuilds the remote container end-to-end.
 - Default GitHub SSH inside the container to port 443 (`ssh.github.com`) because many data-center networks block port 22; see GitHub docs “Using SSH over the HTTPS port”.
@@ -15,7 +15,7 @@ This document describes how the SlotMap devcontainer is deployed on a shared Lin
 | --- | --- |
 | `~/dev/github/SlotMap` | Clean git clone on the remote host. No untracked files; only `git pull` and script execution happen here. |
 | `~/.ssh` | Host SSH directory; public keys staged into sandbox `.devcontainer/ssh` for container `authorized_keys`. Private keys stay on the host/agent. |
-| `~/dev/devcontainers/SlotMap` | Sandbox used by `run_local_devcontainer.sh`. Recreated from the clean repo and includes `.devcontainer/ssh/*.pub` copied from host `~/.ssh`. |
+| `~/dev/devcontainers/SlotMap` | Sandbox used by `run_local_devcontainer.sh`. Recreated from the clean repo and includes `.devcontainer/ssh/*.pub` copied from host `~/.ssh` (public keys only). |
 | `/workspaces/SlotMap` | Path inside the container where the sandbox is mounted. `post_create.sh` copies staged keys into `/home/<dev-user>/.ssh/authorized_keys`. |
 
 ### Workflow Diagram
@@ -37,7 +37,7 @@ flowchart TD
    - `shellcheck --severity=warning scripts/*.sh` to lint helper scripts.
 2. Only commit/push after these pass. If any fail, fix locally first.
 3. Push and watch GitHub Actions (linters/validators) until they go green. Do not trigger the remote rebuild until CI is clean.
-4. After CI is green, run `./scripts/deploy_remote_devcontainer.sh --remote-host c24s1.ch2` (and `--remote-user` if needed) to rebuild the devcontainer on the remote host.
+4. After CI is green, run `./scripts/deploy_remote_devcontainer.sh --remote-host <host> --remote-user <user>` (host/user/port configurable via env/args) to rebuild the devcontainer on the remote host.
 
 ### Detailed Steps
 1. **Local machine (Mac)**  
