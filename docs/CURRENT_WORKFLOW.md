@@ -16,7 +16,7 @@ This document describes the **complete** current workflow for deploying and conn
 
 **Key Components:**
 - **Local Machine:** Developer's Mac (laptop)
-- **Remote Host:** `c24s1.ch2` (Ubuntu 24.04 server)
+- **Remote Host:** (example) `c24s1.ch2` (Ubuntu 24.04 server)
 - **Container:** Docker devcontainer running on remote host
 - **Protocols:** SSH, Docker Remote API (via SSH tunnel), rsync
 
@@ -48,7 +48,7 @@ This document describes the **complete** current workflow for deploying and conn
                             │ + rsync over SSH
                             │
 ┌───────────────────────────▼───────────────────────────────────────────┐
-│                    Remote Host: c24s1.ch2                             │
+│                    Remote Host: (example) c24s1.ch2                   │
 │  ┌────────────────────────────────────────────────────────────┐     │
 │  │ Remote Files:                                              │     │
 │  │  - ~/dev/github/SlotMap (canonical repo)                   │     │
@@ -91,7 +91,7 @@ This document describes the **complete** current workflow for deploying and conn
 │                    Developer's Mac (SSH Client)                       │
 │  ┌────────────────────────────────────────────────────────────┐     │
 │  │ SSH Connection:                                            │     │
-│  │  ssh -i ~/.ssh/id_ed25519 -p 9222 rmanaloto@c24s1.ch2     │     │
+│  │  ssh -i ~/.ssh/id_ed25519 -p 9222 rmanaloto@c24s1.ch2 (example)    │     │
 │  │                                                            │     │
 │  │ IDE Integration:                                          │     │
 │  │  - CLion Remote Development                                │     │
@@ -763,7 +763,7 @@ gh auth status
 
 ## Performance Characteristics
 
-### Build Times (Remote Host: c24s1.ch2)
+### Build Times (Remote Host: example c24s1.ch2)
 
 **First Build (Cold Cache):**
 ```
