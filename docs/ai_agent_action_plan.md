@@ -25,6 +25,7 @@ This repository contains a C++ project (`SlotMap`) with a custom devcontainer se
 3. **devcontainer.json**: parameterize SSH port in `runArgs` and `sshd` feature options using `${localEnv:DEVCONTAINER_SSH_PORT:-9222}` (or equivalent). Keep user configurable via `DEVCONTAINER_USER`.
 4. **Docs**: update references to example hosts/ports to note they are configurable; avoid implying fixed hosts. Leave examples as placeholders.
 5. **Validation**: rerun `./scripts/pre_commit.sh` and redeploy to confirm the parameterized setup still works with supplied args/env.
+6. **Guardrail**: `scripts/check_hardcoded_refs.sh` runs in `pre_commit.sh` to fail if personal host/user strings reappear in code; update its pattern list if new personal strings need blocking.
 
 **Sources:** Devcontainer variable substitution `${localEnv:VAR}` (Dev Containers spec), shell script arg patterns.
 

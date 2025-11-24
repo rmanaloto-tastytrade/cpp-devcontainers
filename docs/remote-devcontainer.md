@@ -22,11 +22,10 @@ This document describes how the SlotMap devcontainer is deployed on a shared Lin
 ```mermaid
 flowchart TD
     A[Mac laptop\n./scripts/deploy_remote_devcontainer.sh] -->|git push| B(GitHub repo)
-    A -->|scp .pub key| C[/~/macbook_ssh_keys on remote/]
     A -->|ssh remote| D[Remote host shell]
     D -->|run_local_devcontainer.sh| E[/~/dev/devcontainers/SlotMap sandbox/]
     E -->|devcontainer up| F[(Docker container\nhost-matching user + sshd)]
-    F -->|port 2222 published as 9222| A
+    F -->|port 2222 published as ${DEVCONTAINER_SSH_PORT:-9222}| A
 ```
 
 ### Required Local Checks Before Deploy
@@ -58,7 +57,7 @@ flowchart TD
    - The deploy script logs output under `logs/deploy_remote_devcontainer_<timestamp>.log` for later review.
 
 4. **Connecting from the laptop**  
-   - After the script reports success, connect with `ssh -i ~/.ssh/id_ed25519 -p 9222 <remote-username>@c24s1.ch2`. The username equals the Linux account on the host because build args set the devcontainer user accordingly.  
+   - After the script reports success, connect with `ssh -i ~/.ssh/id_ed25519 -p <port> <remote-username>@<host>`. The username equals the Linux account on the host because build args set the devcontainer user accordingly.  
    - CLion or VS Code can reuse the same host/port if they prefer direct SSH.
    - GitHub SSH from inside the container uses port 443 (Host github.com -> ssh.github.com:443) to avoid egress blocks on port 22.
 

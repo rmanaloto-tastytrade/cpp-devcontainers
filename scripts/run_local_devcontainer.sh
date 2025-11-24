@@ -14,6 +14,13 @@ set -euo pipefail
 # Requirements: devcontainer CLI installed on the remote host, Docker running,
 # and public key(s) present in $KEY_CACHE (e.g., ~/.ssh/id_ed25519.pub).
 
+# Optional local env overrides
+CONFIG_ENV_FILE=${CONFIG_ENV_FILE:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/config/env/devcontainer.env"}
+if [[ -f "$CONFIG_ENV_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$CONFIG_ENV_FILE"
+fi
+
 REPO_PATH=${REPO_PATH:-"$HOME/dev/github/SlotMap"}
 SANDBOX_PATH=${SANDBOX_PATH:-"$HOME/dev/devcontainers/SlotMap"}
 KEY_CACHE=${KEY_CACHE:-"$HOME/.ssh"}

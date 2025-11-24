@@ -29,7 +29,7 @@ USAGE
 die(){ echo "Error: $*" >&2; exit 1; }
 
 LOCAL_USER="$(id -un)"
-DEFAULT_REMOTE_HOST="${DEFAULT_REMOTE_HOST:-c24s1.ch2}"
+DEFAULT_REMOTE_HOST="${DEFAULT_REMOTE_HOST:-""}"
 REMOTE_HOST="${DEFAULT_REMOTE_HOST:-""}"
 REMOTE_USER=""
 SSH_KEY_PATH="$HOME/.ssh/id_ed25519.pub"
@@ -80,6 +80,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
+# Optional local env overrides
+CONFIG_ENV_FILE=${CONFIG_ENV_FILE:-"$REPO_ROOT/config/env/devcontainer.env"}
+if [[ -f "$CONFIG_ENV_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$CONFIG_ENV_FILE"
+fi
 cd "$REPO_ROOT"
 
 CONFIG_REMOTE_USER="$(git config --get slotmap.remoteUser || true)"

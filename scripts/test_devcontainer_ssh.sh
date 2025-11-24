@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Optional local env overrides
+CONFIG_ENV_FILE=${CONFIG_ENV_FILE:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/config/env/devcontainer.env"}
+if [[ -f "$CONFIG_ENV_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$CONFIG_ENV_FILE"
+fi
+
 # Verbose SSH connectivity test to the devcontainer exposed on a remote host.
 # Supply host/user/port explicitly (no baked-in host/user); defaults are neutral.
 

@@ -8,3 +8,5 @@ xcode
 logs/
 
 .idea/
+# Local environment overrides (not committed)
+config/env/devcontainer.env
