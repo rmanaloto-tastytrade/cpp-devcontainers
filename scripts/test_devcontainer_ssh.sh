@@ -2,16 +2,16 @@
 set -euo pipefail
 
 # Verbose SSH connectivity test to the devcontainer exposed on a remote host.
-# Defaults match our current flow (c24s1.ch2:9222, user rmanaloto, key ~/.ssh/id_ed25519).
+# Supply host/user/port explicitly (no baked-in host/user); defaults are neutral.
 
 usage() {
   cat <<'USAGE'
 Usage: scripts/test_devcontainer_ssh.sh [options]
 
 Options:
-  --host <hostname>        Remote host (default: c24s1.ch2)
-  --port <port>            Remote SSH port (default: 9222)
-  --user <username>        SSH username (default: rmanaloto)
+  --host <hostname>        Remote host (required unless DEVCONTAINER_REMOTE_HOST set)
+  --port <port>            Remote SSH port (default: DEVCONTAINER_SSH_PORT or 9222)
+  --user <username>        SSH username (required unless DEVCONTAINER_REMOTE_USER set)
   --key <path>             Private key path (default: ~/.ssh/id_ed25519)
   --known-hosts <path>     Known hosts file (default: ~/.ssh/known_hosts)
   --clear-known-host       Remove existing host key entry for [host]:[port] before testing
@@ -19,9 +19,9 @@ Options:
 USAGE
 }
 
-HOST="c24s1.ch2"
-PORT="9222"
-USER_NAME="rmanaloto"
+HOST="${DEVCONTAINER_REMOTE_HOST:-}"
+PORT="${DEVCONTAINER_SSH_PORT:-9222}"
+USER_NAME="${DEVCONTAINER_REMOTE_USER:-}"
 KEY_PATH="$HOME/.ssh/id_ed25519"
 KNOWN_HOSTS_FILE="$HOME/.ssh/known_hosts"
 CLEAR_KNOWN_HOST=0
@@ -39,6 +39,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+[[ -n "$HOST" ]] || { echo "[ssh-test] ERROR: host is required (pass --host or set DEVCONTAINER_REMOTE_HOST)"; exit 1; }
+[[ -n "$USER_NAME" ]] || { echo "[ssh-test] ERROR: user is required (pass --user or set DEVCONTAINER_REMOTE_USER)"; exit 1; }
 [[ -f "$KEY_PATH" ]] || { echo "[ssh-test] ERROR: key not found: $KEY_PATH" >&2; exit 1; }
 
 echo "[ssh-test] Host: $HOST"

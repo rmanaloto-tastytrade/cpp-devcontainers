@@ -15,6 +15,21 @@ This repository contains a C++ project (`SlotMap`) with a custom devcontainer se
 
 ---
 
+## Task 0: Parameterize Host/User/Port (Top Priority)
+
+**Objective:** Remove hardcoded references to a specific Mac user, host, or SSH port across devcontainer configs and scripts; make them configurable via script args/env.
+
+### Instructions
+1. **Identify hardcoded values**: search for `c24s1`, `9222`, `ray.manaloto`, and `ray.manaloto@tastytrade.com` in `.devcontainer/**` and `scripts/*.sh`.
+2. **Scripts**: ensure `deploy_remote_devcontainer.sh`, `run_local_devcontainer.sh`, and `test_devcontainer_ssh.sh` accept `--host/--port/--user` (with neutral defaults or required params). Remove baked-in defaults to specific hosts/ports/users.
+3. **devcontainer.json**: parameterize SSH port in `runArgs` and `sshd` feature options using `${localEnv:DEVCONTAINER_SSH_PORT:-9222}` (or equivalent). Keep user configurable via `DEVCONTAINER_USER`.
+4. **Docs**: update references to example hosts/ports to note they are configurable; avoid implying fixed hosts. Leave examples as placeholders.
+5. **Validation**: rerun `./scripts/pre_commit.sh` and redeploy to confirm the parameterized setup still works with supplied args/env.
+
+**Sources:** Devcontainer variable substitution `${localEnv:VAR}` (Dev Containers spec), shell script arg patterns.
+
+---
+
 ## Task 1: Security Hardening (Critical)
 
 **Objective:** Stop syncing private SSH keys to the remote host.

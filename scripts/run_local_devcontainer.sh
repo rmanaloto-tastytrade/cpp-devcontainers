@@ -27,6 +27,7 @@ CONTAINER_GID=${CONTAINER_GID:-$(id -g)}
 DEVCONTAINER_CLI_VERSION=${DEVCONTAINER_CLI_VERSION:-"0.80.2"}
 DOCKER_CONTEXT=${DOCKER_CONTEXT:-}
 WORKSPACE_PATH=${WORKSPACE_PATH:-"/home/${CONTAINER_USER}/dev/devcontainers/workspace"}
+DEVCONTAINER_SSH_PORT=${DEVCONTAINER_SSH_PORT:-9222}
 
 echo "[remote] Repo source       : $REPO_PATH"
 echo "[remote] Sandbox workspace : $SANDBOX_PATH"
@@ -164,6 +165,7 @@ export DEVCONTAINER_GID="${CONTAINER_GID}"
 export DEVCONTAINER_WORKSPACE_PATH="${WORKSPACE_PATH}"
 export REMOTE_WORKSPACE_PATH="${WORKSPACE_PATH}"
 export REMOTE_SSH_SYNC_DIR="${KEY_CACHE}"
+export DEVCONTAINER_SSH_PORT="${DEVCONTAINER_SSH_PORT}"
 
 echo "[remote] Building container user ${CONTAINER_USER} (uid=${CONTAINER_UID}, gid=${CONTAINER_GID})"
 
@@ -186,8 +188,8 @@ docker exec "$CONTAINER_ID" sh -c 'echo "--- LLVM packages list ---"; if [ -f /o
   # SSH connectivity check if a private key is available
   SSH_TEST_KEY="${KEY_CACHE}/id_ed25519"
   if [[ -f "$SSH_TEST_KEY" ]]; then
-    echo "[remote] Testing SSH into container on port 9222..."
-    if ssh -i "$SSH_TEST_KEY" -o StrictHostKeyChecking=no -o BatchMode=yes -p 9222 "${CONTAINER_USER}@localhost" exit >/dev/null 2>&1; then
+    echo "[remote] Testing SSH into container on port ${DEVCONTAINER_SSH_PORT}..."
+    if ssh -i "$SSH_TEST_KEY" -o StrictHostKeyChecking=no -o BatchMode=yes -p "${DEVCONTAINER_SSH_PORT}" "${CONTAINER_USER}@localhost" exit >/dev/null 2>&1; then
       echo "[remote] SSH test succeeded using ${SSH_TEST_KEY}."
     else
       echo "[remote] WARNING: SSH test failed using ${SSH_TEST_KEY}. Check authorized_keys and port mapping."

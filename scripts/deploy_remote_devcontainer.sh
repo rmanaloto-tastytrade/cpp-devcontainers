@@ -11,7 +11,7 @@ usage() {
 Usage: scripts/deploy_remote_devcontainer.sh [options]
 
 Options:
-  --remote-host <host>       Remote SSH host (default: c24s1.ch2)
+  --remote-host <host>       Remote SSH host (required if no DEFAULT_REMOTE_HOST env)
   --remote-user <user>       Remote SSH user (default: current user)
   --ssh-key <path>           Local public key to copy (default: ~/.ssh/id_ed25519.pub)
   --remote-key-cache <path>  Remote key cache dir (default: ~/macbook_ssh_keys)
@@ -30,10 +30,10 @@ die(){ echo "Error: $*" >&2; exit 1; }
 
 LOCAL_USER="$(id -un)"
 DEFAULT_REMOTE_HOST="${DEFAULT_REMOTE_HOST:-c24s1.ch2}"
-REMOTE_HOST="$DEFAULT_REMOTE_HOST"
-REMOTE_USER="rmanaloto"
+REMOTE_HOST="${DEFAULT_REMOTE_HOST:-""}"
+REMOTE_USER=""
 SSH_KEY_PATH="$HOME/.ssh/id_ed25519.pub"
-REMOTE_PORT="${REMOTE_PORT:-9222}"
+REMOTE_PORT="${REMOTE_PORT:-${DEVCONTAINER_SSH_PORT:-9222}}"
 REMOTE_KEY_CACHE=""
 REMOTE_REPO_PATH=""
 REMOTE_SANDBOX_PATH=""
@@ -91,6 +91,10 @@ if [[ -z "$REMOTE_USER" ]]; then
   else
     REMOTE_USER="$LOCAL_USER"
   fi
+fi
+
+if [[ -z "$REMOTE_HOST" ]]; then
+  die "Remote host is required (set DEFAULT_REMOTE_HOST env or pass --remote-host)"
 fi
 
 REMOTE_HOME=${REMOTE_HOME:-"/home/${REMOTE_USER}"}
@@ -176,6 +180,7 @@ ssh "${REMOTE_USER}@${REMOTE_HOST}" \
   CONTAINER_UID="$CONTAINER_UID" \
   CONTAINER_GID="$CONTAINER_GID" \
   WORKSPACE_PATH="$REMOTE_WORKSPACE_PATH" \
+  DEVCONTAINER_SSH_PORT="$REMOTE_PORT" \
   bash <<'EOF'
 set -euo pipefail
 cd "$REPO_PATH"
@@ -185,6 +190,7 @@ git pull --ff-only origin "$BRANCH"
 REPO_PATH="$REPO_PATH" \
 SANDBOX_PATH="$SANDBOX_PATH" \
 KEY_CACHE="$KEY_CACHE" \
+DEVCONTAINER_SSH_PORT="$DEVCONTAINER_SSH_PORT" \
 ./scripts/run_local_devcontainer.sh
 EOF
 
