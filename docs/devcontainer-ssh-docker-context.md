@@ -44,6 +44,7 @@ This note explains how to make SSH into the devcontainer work when the container
 - `.devcontainer/devcontainer.json` — image, mounts, sshd feature, workspace paths.
 - `scripts/deploy_remote_devcontainer.sh` — runs from your Mac; syncs keys, triggers remote build, resolves remote uid/gid.
 - `scripts/run_local_devcontainer.sh` — runs on the remote host; bakes images and runs `devcontainer up`.
+- `scripts/generate_cpp_devcontainer_ssh_config.sh` — writes a dedicated SSH config at `~/.ssh/cpp-devcontainer.conf` using `config/env/devcontainer.env` (keeps ProxyJump/tunnel settings out of your main ssh config).
 - `.devcontainer/scripts/post_create.sh` — installs authorized_keys from `${workspace}/.devcontainer/ssh` and runs CMake preset.
 
 ## Quick verification
