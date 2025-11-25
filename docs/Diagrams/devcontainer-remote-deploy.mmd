@@ -1,0 +1,20 @@
+%% Remote devcontainer deploy flow via Docker SSH context
+sequenceDiagram
+    actor Dev as Developer (Local)
+    participant Deploy as deploy_remote_devcontainer.sh
+    participant Context as Docker SSH Context
+    participant Remote as Remote Host Repo
+    participant Bake as docker buildx bake (remote)
+    participant Devc as Devcontainer
+    participant GH as GitHub
+
+    Note over Dev,Devc: Use DOCKER_CONTEXT + DEVCONTAINER_* from config/env/devcontainer.env
+    Dev->>Deploy: Run deploy_remote_devcontainer.sh
+    Deploy->>GH: git push origin <branch>
+    Deploy->>Context: docker context create/use <ctx>
+    Deploy->>Remote: Stage ~/.ssh/*.pub → .devcontainer/ssh/
+    Deploy->>Remote: Trigger run_local_devcontainer.sh
+    Remote->>Bake: docker buildx bake base/tools/devcontainer (context=<ctx>)
+    Bake-->>Remote: devcontainer:local image built
+    Remote->>Devc: devcontainer up --remove-existing
+    Devc-->>Deploy: SSH ready on <host>:<port> (mapped to 2222)

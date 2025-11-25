@@ -6,6 +6,8 @@
 
 > Update (2025-01-23): Mac private keys are no longer copied to the remote host or container. The devcontainer uses the remote host user (`rmanaloto`), stages only host `~/.ssh/*.pub` for `authorized_keys`, and relies on the host SSH agent (with port 443 fallback to ssh.github.com) for outbound GitHub SSH. Diagrams that show `~/devcontainers/ssh_keys` reflect the legacy flow.
 
+Sources live in `docs/Diagrams/*.mmd`. Render to SVG/PNG with `./scripts/render_diagrams.sh --output docs/Diagrams/rendered` (run inside the devcontainer to use the baked mermaid-cli toolchain).
+
 ---
 
 ## Table of Contents

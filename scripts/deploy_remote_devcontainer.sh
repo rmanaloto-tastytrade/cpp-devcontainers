@@ -30,10 +30,10 @@ die(){ echo "Error: $*" >&2; exit 1; }
 
 LOCAL_USER="$(id -un)"
 DEFAULT_REMOTE_HOST="${DEFAULT_REMOTE_HOST:-""}"
-REMOTE_HOST="${DEFAULT_REMOTE_HOST:-""}"
+REMOTE_HOST=""
 REMOTE_USER=""
 SSH_KEY_PATH="$HOME/.ssh/id_ed25519.pub"
-REMOTE_PORT="${REMOTE_PORT:-${DEVCONTAINER_SSH_PORT:-9222}}"
+REMOTE_PORT=""
 REMOTE_KEY_CACHE=""
 REMOTE_REPO_PATH=""
 REMOTE_SANDBOX_PATH=""
@@ -42,8 +42,8 @@ SSH_SYNC_SOURCE="${SSH_SYNC_SOURCE:-"$HOME/.ssh/"}"
 SYNC_MAC_SSH="${SYNC_MAC_SSH:-0}"
 DOCKER_CONTEXT="${DOCKER_CONTEXT:-}"
 RSYNC_SSH="${RSYNC_SSH:-ssh -o StrictHostKeyChecking=accept-new}"
-# Container identity defaults: use the remote host user/uid/gid unless overridden
-CONTAINER_USER="${CONTAINER_USER:-$REMOTE_USER}"
+# Container identity defaults: set after REMOTE_USER resolves
+CONTAINER_USER="${CONTAINER_USER:-}"
 CONTAINER_UID="${CONTAINER_UID:-}"
 CONTAINER_GID="${CONTAINER_GID:-}"
 REMOTE_WORKSPACE_PATH="${REMOTE_WORKSPACE_PATH:-""}"
@@ -88,6 +88,14 @@ if [[ -f "$CONFIG_ENV_FILE" ]]; then
 fi
 cd "$REPO_ROOT"
 
+# Apply defaults after loading config/env/devcontainer.env (if present)
+REMOTE_HOST=${REMOTE_HOST:-${DEVCONTAINER_REMOTE_HOST:-${DEFAULT_REMOTE_HOST:-""}}}
+REMOTE_USER=${REMOTE_USER:-${DEVCONTAINER_REMOTE_USER:-""}}
+REMOTE_PORT=${REMOTE_PORT:-${DEVCONTAINER_SSH_PORT:-9222}}
+DOCKER_CONTEXT=${DOCKER_CONTEXT:-${DEVCONTAINER_DOCKER_CONTEXT:-""}}
+SSH_SYNC_SOURCE=${SSH_SYNC_SOURCE:-"$HOME/.ssh/"}
+REMOTE_SSH_SYNC_DIR=${REMOTE_SSH_SYNC_DIR:-""}
+
 CONFIG_REMOTE_USER="$(git config --get slotmap.remoteUser || true)"
 if [[ -z "$REMOTE_USER" ]]; then
   if [[ -n "$CONFIG_REMOTE_USER" ]]; then
@@ -100,8 +108,10 @@ if [[ -z "$REMOTE_USER" ]]; then
 fi
 
 if [[ -z "$REMOTE_HOST" ]]; then
-  die "Remote host is required (set DEFAULT_REMOTE_HOST env or pass --remote-host)"
+  die "Remote host is required (set DEVCONTAINER_REMOTE_HOST/DEFAULT_REMOTE_HOST or pass --remote-host)"
 fi
+
+CONTAINER_USER=${CONTAINER_USER:-$REMOTE_USER}
 
 REMOTE_HOME=${REMOTE_HOME:-"/home/${REMOTE_USER}"}
 REMOTE_KEY_CACHE=${REMOTE_KEY_CACHE:-"${REMOTE_HOME}/devcontainers/ssh_keys"}

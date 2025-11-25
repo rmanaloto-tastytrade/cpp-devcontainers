@@ -1,0 +1,32 @@
+%% Devcontainer docker-bake pipeline (base -> builders -> merge -> dev)
+flowchart LR
+    base[base\nUbuntu 24.04 + gcc-14/clang-21 + perf\ngit/cmake/ninja/make]
+
+    subgraph builders [parallel builder stages]
+        clang_p[clang_p2996\nBloomberg branch]
+        node_mermaid[Node.js + mmdc]
+        mold[mold linker]
+        gh_cli[GitHub CLI]
+        ccache[ccache]
+        sccache[sccache]
+        ripgrep[ripgrep]
+        cppcheck[cppcheck]
+        valgrind[valgrind]
+        python_tools[uv / ruff / ty]
+        pixi[pixi]
+        iwyu[include-what-you-use]
+        mrdocs[MRDocs]
+        jq[jq]
+        awscli[AWS CLI]
+    end
+
+    tools_merge[tools_merge\ncopy staged artifacts + bootstrap vcpkg]
+    devcontainer[devcontainer\ncreate user + vcpkg shells + env defaults]
+
+    base --> builders
+    builders --> tools_merge
+    tools_merge --> devcontainer
+
+    style base fill:#1e88e5,color:#fff
+    style tools_merge fill:#fb8c00,color:#fff
+    style devcontainer fill:#43a047,color:#fff
