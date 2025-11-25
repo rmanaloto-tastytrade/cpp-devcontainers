@@ -57,8 +57,8 @@ flowchart TD
    - The deploy script logs output under `logs/deploy_remote_devcontainer_<timestamp>.log` for later review.
 
 4. **Connecting from the laptop**  
-   - After the script reports success, connect with `ssh -i ~/.ssh/id_ed25519 -p <port> <remote-username>@<host>`. The username equals the Linux account on the host because build args set the devcontainer user accordingly.  
-   - CLion or VS Code can reuse the same host/port if they prefer direct SSH.
+   - Port is bound to `127.0.0.1:<port>` on the host. Use a tunnel or ProxyJump, e.g. `ssh -J <remote-username>@<host> -i ~/.ssh/id_ed25519 -p <port> <remote-username>@127.0.0.1`. The username equals the Linux account on the host because build args set the devcontainer user accordingly.  
+   - CLion or VS Code can reuse the same host/port via a jump configuration.  
    - GitHub SSH from inside the container uses port 443 (Host github.com -> ssh.github.com:443) to avoid egress blocks on port 22.
 
 ### Troubleshooting & Validation Checklist
@@ -74,7 +74,7 @@ flowchart TD
 | Confirm caching/search helpers | `docker exec -u <remote-username> <container> ccache --version && sccache --version && rg --version` |
 | Rebuild sandbox manually on remote | `cd ~/dev/github/SlotMap && ./scripts/run_local_devcontainer.sh` |
 
-If SSH fails with `Connection reset by peer`, verify that `/home/<remote-username>/.ssh/authorized_keys` exists and the runArgs publish `9222:2222`.
+If SSH fails with `Connection reset by peer`, verify that `/home/<remote-username>/.ssh/authorized_keys` exists and the runArgs publish `127.0.0.1:${DEVCONTAINER_SSH_PORT:-9222}:2222` (use a tunnel or ProxyJump).
 
 ### Notes
 - The sandbox copy is refreshed on every deployment, so local edits must be committed/pushed before running the helper.

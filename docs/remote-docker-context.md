@@ -42,7 +42,7 @@ The container user is supplied via the scripts. By default, `deploy_remote_devco
    This:
    - Pushes current branch.
    - Uses the remote Docker engine (via context) to validate/bake/build images and run `devcontainer up` with host/user/port from env/args.
-5) Connect: `ssh -i ~/.ssh/id_ed25519 -p <port> <container-user>@<host>` (username = container user, port published by the devcontainer).
+5) Connect: port is bound to `127.0.0.1:<port>` on the host. Use a tunnel or ProxyJump, e.g. `ssh -J <remote-user>@<host> -i ~/.ssh/id_ed25519 -p <port> <container-user>@127.0.0.1`.
 
 ## Notes & Options
 - Workspace location: recommended to use a remote checkout to avoid slow SSHFS. Default `workspaceFolder` is `/home/${USER}/workspace` (generic). `workspaceMount` binds the repo into that path; `deploy_remote_devcontainer.sh` defaults the host path to `~/dev/devcontainers/workspace` (override with `--remote-workspace`).

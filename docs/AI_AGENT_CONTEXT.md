@@ -64,7 +64,7 @@ security_issue_test_script:
 devcontainer_config_runArgs:
   file: ".devcontainer/devcontainer.json"
   line_number: 9
-  current_content: "\"runArgs\": [\"-p\", \"9222:2222\"]"
+  current_content: "\"runArgs\": [\"-p\", \"127.0.0.1:${localEnv:DEVCONTAINER_SSH_PORT:-9222}:2222\"]"
 
 devcontainer_config_sshd_feature:
   file: ".devcontainer/devcontainer.json"
@@ -277,7 +277,7 @@ change_3_bind_port_to_localhost:
   breaking: true
   requires_tunnel: true
   old: "\"runArgs\": [\"-p\", \"9222:2222\"]"
-  new: "\"runArgs\": [\"-p\", \"127.0.0.1:9222:2222\"]"
+  new: "\"runArgs\": [\"-p\", \"127.0.0.1:${localEnv:DEVCONTAINER_SSH_PORT:-9222}:2222\"]"
   additional_step: "ssh -L 9222:localhost:9222 rmanaloto@c24s1.ch2 -N -f"
   rollback: "revert commit, re-run deploy"
 ```
@@ -619,11 +619,11 @@ definition_of_done:
 
 ".devcontainer/devcontainer.json":
   line_9:
-    current: "\"runArgs\": [\"-p\", \"9222:2222\"]"
-    action: "CHANGE to: [\"-p\", \"127.0.0.1:9222:2222\"]"
+    current: "\"runArgs\": [\"-p\", \"127.0.0.1:${localEnv:DEVCONTAINER_SSH_PORT:-9222}:2222\"]"
+    action: "None (already bound to localhost; use tunnel/ProxyJump to connect)"
     risk: "MEDIUM"
-    breaking: true
-    requires: "SSH tunnel from Mac"
+    breaking: false
+    requires: "SSH tunnel or ProxyJump from Mac/clients"
 
   after_line_22:
     action: "ADD mount for Remote-Resident Agent (optional)"

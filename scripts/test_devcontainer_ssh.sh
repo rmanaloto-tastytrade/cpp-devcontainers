@@ -22,6 +22,8 @@ Options:
   --key <path>             Private key path (default: ~/.ssh/id_ed25519)
   --known-hosts <path>     Known hosts file (default: ~/.ssh/known_hosts)
   --clear-known-host       Remove existing host key entry for [host]:[port] before testing
+  --jump-user <user>       SSH user for proxy jump to the host (default: --user)
+  --no-proxyjump           Disable ProxyJump and connect directly (requires host port exposed beyond localhost)
   -h, --help               Show this help
 USAGE
 }
@@ -32,6 +34,8 @@ USER_NAME="${DEVCONTAINER_REMOTE_USER:-}"
 KEY_PATH="$HOME/.ssh/id_ed25519"
 KNOWN_HOSTS_FILE="$HOME/.ssh/known_hosts"
 CLEAR_KNOWN_HOST=0
+USE_PROXYJUMP=1
+JUMP_USER=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -41,6 +45,8 @@ while [[ $# -gt 0 ]]; do
     --key) KEY_PATH="$2"; shift 2 ;;
     --known-hosts) KNOWN_HOSTS_FILE="$2"; shift 2 ;;
     --clear-known-host) CLEAR_KNOWN_HOST=1; shift ;;
+    --jump-user) JUMP_USER="$2"; shift 2 ;;
+    --no-proxyjump) USE_PROXYJUMP=0; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
   esac
@@ -53,6 +59,7 @@ done
 echo "[ssh-test] Host: $HOST"
 echo "[ssh-test] Port: $PORT"
 echo "[ssh-test] User: $USER_NAME"
+[[ -n "$JUMP_USER" ]] && echo "[ssh-test] Jump user: $JUMP_USER"
 echo "[ssh-test] Key : $KEY_PATH"
 echo "[ssh-test] Known hosts file: $KNOWN_HOSTS_FILE"
 
@@ -67,14 +74,23 @@ if [[ "$CLEAR_KNOWN_HOST" -eq 1 ]]; then
   ssh-keygen -R "[$CANON_HOST]:$PORT" -f "$KNOWN_HOSTS_FILE" >/dev/null 2>&1 || true
 fi
 
+TARGET_HOST="$HOST"
+PROXY_OPTS=()
+if [[ "$USE_PROXYJUMP" -eq 1 ]]; then
+  PROXY_USER="${JUMP_USER:-$USER_NAME}"
+  PROXY_OPTS=(-J "${PROXY_USER}@${HOST}")
+  TARGET_HOST="127.0.0.1"
+fi
+
 SSH_CMD=(ssh -vvv
   -i "$KEY_PATH"
   -o IdentitiesOnly=yes
   -o UserKnownHostsFile="$KNOWN_HOSTS_FILE"
   -o StrictHostKeyChecking=no
   -o ConnectTimeout=10
+  "${PROXY_OPTS[@]}"
   -p "$PORT"
-  "${USER_NAME}@${HOST}"
+  "${USER_NAME}@${TARGET_HOST}"
   "echo SSH_OK")
 
 echo "[ssh-test] Executing: ${SSH_CMD[*]}"
@@ -146,8 +162,9 @@ SSH_CMD_REMOTE=(ssh
   -o UserKnownHostsFile=/dev/null
   -o StrictHostKeyChecking=no
   -o ConnectTimeout=15
+  "${PROXY_OPTS[@]}"
   -p "$PORT"
-  "${USER_NAME}@${HOST}"
+  "${USER_NAME}@${TARGET_HOST}"
   "$REMOTE_CHECK_CMD")
 
 echo "[ssh-test] Executing remote validation command..."
