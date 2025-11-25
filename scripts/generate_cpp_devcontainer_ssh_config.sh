@@ -6,7 +6,7 @@ set -euo pipefail
 # settings out of ~/.ssh/config while giving a simple alias for tools/CLIs.
 #
 # Usage:
-#   ./scripts/generate_cpp_devcontainer_ssh_config.sh [--env-file path] [--output path]
+#   ./scripts/generate_cpp_devcontainer_ssh_config.sh [--env-file path] [--output path] [--proxy-user user]
 #
 # Defaults:
 #   env-file:   <repo>/config/env/devcontainer.env
@@ -19,6 +19,7 @@ Usage: scripts/generate_cpp_devcontainer_ssh_config.sh [options]
 Options:
   --env-file <path>   Path to devcontainer env file (default: config/env/devcontainer.env)
   --output  <path>    Output SSH config path (default: ~/.ssh/cpp-devcontainer.conf)
+  --proxy-user <user> Override ProxyJump user (default: DEVCONTAINER_REMOTE_USER; omit to use local default)
   -h, --help          Show this help
 USAGE
 }
@@ -27,11 +28,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${REPO_ROOT}/config/env/devcontainer.env"
 OUTPUT_PATH="${HOME}/.ssh/cpp-devcontainer.conf"
+PROXY_USER=""
+PROXY_USER_SET=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --env-file) ENV_FILE="$2"; shift 2 ;;
     --output) OUTPUT_PATH="$2"; shift 2 ;;
+    --proxy-user) PROXY_USER="$2"; PROXY_USER_SET=1; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
   esac
@@ -46,9 +50,22 @@ source "$ENV_FILE"
 REMOTE_HOST="${DEVCONTAINER_REMOTE_HOST:-}"
 REMOTE_USER="${DEVCONTAINER_REMOTE_USER:-}"
 REMOTE_PORT="${DEVCONTAINER_SSH_PORT:-9222}"
+if [[ "$PROXY_USER_SET" -eq 0 ]]; then
+  PROXY_USER="${DEVCONTAINER_PROXY_USER:-${DEVCONTAINER_REMOTE_USER:-}}"
+fi
 
 [[ -n "$REMOTE_HOST" ]] || { echo "DEVCONTAINER_REMOTE_HOST is missing in $ENV_FILE" >&2; exit 1; }
 [[ -n "$REMOTE_USER" ]] || { echo "DEVCONTAINER_REMOTE_USER is missing in $ENV_FILE" >&2; exit 1; }
+
+mktmp_proxy_jump() {
+  if [[ -z "$PROXY_USER" ]]; then
+    echo "${REMOTE_HOST}"
+  else
+    echo "${PROXY_USER}@${REMOTE_HOST}"
+  fi
+}
+
+PROXY_JUMP_VALUE="$(mktmp_proxy_jump)"
 
 mkdir -p "${HOME}/.ssh"
 cat > "$OUTPUT_PATH" <<EOF
@@ -58,7 +75,7 @@ Host cpp-devcontainer
     HostName 127.0.0.1
     Port ${REMOTE_PORT}
     User ${REMOTE_USER}
-    ProxyJump ${REMOTE_USER}@${REMOTE_HOST}
+    ProxyJump ${PROXY_JUMP_VALUE}
     IdentitiesOnly yes
     ForwardAgent yes
     ServerAliveInterval 60
