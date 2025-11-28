@@ -64,6 +64,9 @@ target "_base" {
     CLANG_P2996_REPO   = "https://github.com/bloomberg/clang-p2996.git"
     CLANG_P2996_PREFIX = "/opt/clang-p2996"
     CLANG_P2996_JOBS   = "4"
+    ENABLE_CLANG_P2996 = "0"
+    ENABLE_GCC15       = "1"
+    ENABLE_IWYU        = "1"
     JQ_VERSION         = "1.8.1"
     AWSCLI_VERSION     = "latest"
     GCC15_VERSION      = "15.1.0"
@@ -223,8 +226,11 @@ target "devcontainer_gcc14_clang_qual" {
   dependsOn = ["tools_merge"]
   tags      = ["devcontainer:gcc14-clang${CLANG_QUAL}"]
   args = {
-    GCC_VERSION   = "14"
-    CLANG_VARIANT = "${CLANG_QUAL}"
+    GCC_VERSION        = "14"
+    CLANG_VARIANT      = "${CLANG_QUAL}"
+    ENABLE_GCC15       = "0"
+    ENABLE_CLANG_P2996 = "0"
+    ENABLE_IWYU        = "1"
   }
 }
 
@@ -234,8 +240,11 @@ target "devcontainer_gcc14_clang_dev" {
   dependsOn = ["tools_merge"]
   tags      = ["devcontainer:gcc14-clang${CLANG_DEV}"]
   args = {
-    GCC_VERSION   = "14"
-    CLANG_VARIANT = "${CLANG_DEV}"
+    GCC_VERSION        = "14"
+    CLANG_VARIANT      = "${CLANG_DEV}"
+    ENABLE_GCC15       = "0"
+    ENABLE_CLANG_P2996 = "0"
+    ENABLE_IWYU        = "1"
   }
 }
 
@@ -245,8 +254,11 @@ target "devcontainer_gcc14_clangp2996" {
   dependsOn = ["tools_merge"]
   tags      = ["devcontainer:gcc14-clangp2996"]
   args = {
-    GCC_VERSION   = "14"
-    CLANG_VARIANT = "p2996"
+    GCC_VERSION        = "14"
+    CLANG_VARIANT      = "p2996"
+    ENABLE_GCC15       = "0"
+    ENABLE_CLANG_P2996 = "1"
+    ENABLE_IWYU        = "0"
   }
 }
 
@@ -256,8 +268,11 @@ target "devcontainer_gcc15_clang_qual" {
   dependsOn = ["tools_merge"]
   tags      = ["devcontainer:gcc15-clang${CLANG_QUAL}"]
   args = {
-    GCC_VERSION   = "15"
-    CLANG_VARIANT = "${CLANG_QUAL}"
+    GCC_VERSION        = "15"
+    CLANG_VARIANT      = "${CLANG_QUAL}"
+    ENABLE_GCC15       = "1"
+    ENABLE_CLANG_P2996 = "0"
+    ENABLE_IWYU        = "1"
   }
 }
 
@@ -267,8 +282,11 @@ target "devcontainer_gcc15_clang_dev" {
   dependsOn = ["tools_merge"]
   tags      = ["devcontainer:gcc15-clang${CLANG_DEV}"]
   args = {
-    GCC_VERSION   = "15"
-    CLANG_VARIANT = "${CLANG_DEV}"
+    GCC_VERSION        = "15"
+    CLANG_VARIANT      = "${CLANG_DEV}"
+    ENABLE_GCC15       = "1"
+    ENABLE_CLANG_P2996 = "0"
+    ENABLE_IWYU        = "1"
   }
 }
 
@@ -278,8 +296,11 @@ target "devcontainer_gcc15_clangp2996" {
   dependsOn = ["tools_merge"]
   tags      = ["devcontainer:gcc15-clangp2996"]
   args = {
-    GCC_VERSION   = "15"
-    CLANG_VARIANT = "p2996"
+    GCC_VERSION        = "15"
+    CLANG_VARIANT      = "p2996"
+    ENABLE_GCC15       = "1"
+    ENABLE_CLANG_P2996 = "1"
+    ENABLE_IWYU        = "0"
   }
 }
 

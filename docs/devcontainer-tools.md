@@ -12,7 +12,7 @@ This document captures the contents of `.devcontainer/Dockerfile`, similar in sp
 
 ### Core Packages (APT)
 Installed via `apt-get` in the first layer:
-- Build chain: `build-essential`, LLVM toolchain from `apt.llvm.org` for the selected `CLANG_VARIANT` (21 or 22; clang-p2996 is built from source), `binutils`, GCC from Ubuntu Toolchain PPA (`GCC_VERSION` arg, default 15 with fallback to 14 if the PPA lacks it)
+- Build chain: `build-essential`, LLVM toolchain from `apt.llvm.org` for the selected numeric `CLANG_VARIANT` (21 or 22; clang-p2996 is built from source only in the `*clangp2996` tags), `binutils`, GCC 14 from the Ubuntu Toolchain PPA (GCC 15 is built from source when enabled)
 - Tooling: `curl`, `wget`, `sudo`, `pkg-config`, `bash-completion`, `zsh`, `graphviz`, `doxygen`, `rsync`, `python3` (+pip/venv), `tzdata`, `xz-utils`, `unzip`, `zip`, `tar`
 - Debugging helpers: `debuginfod`, `debuginfod-client`
 - vcpkg manifest prerequisites: `autoconf`, `automake`, `libtool`, `m4`, `autoconf-archive`, `patchelf`
@@ -27,9 +27,9 @@ Installed via `apt-get` in the first layer:
 | Ninja | v1.13.1 GitHub release (curl with retry) |
 | Mold | v2.40.4 GitHub release (`mold` + `ld.mold`) |
 | GitHub CLI | v2.83.1 GitHub release |
-| GCC | PPA-installed `gcc-${GCC_VERSION}` (default 15, fallback to 14) + source-built GCC 15.1.0 under `/opt/gcc-15` |
-| LLVM/Clang | Via `llvm.sh ${CLANG_VARIANT}` for 21/22 with extras (MLIR, BOLT, flang, libclc, libllvmlibc); Bloomberg clang-p2996 built from source under `/opt/clang-p2996` |
-| IWYU | `clang_${LLVM_VERSION}` branch built from source (matches LLVM variant) |
+| GCC | GCC 14 from PPA; GCC 15.1.0 built from source under `/opt/gcc-15` when enabled (gcc15 permutations) |
+| LLVM/Clang | Via `llvm.sh ${CLANG_VARIANT}` for 21/22 with extras (MLIR, BOLT, flang, libclc, libllvmlibc); clang-p2996 built from source under `/opt/clang-p2996` only in `*clangp2996` permutations |
+| IWYU | `clang_${LLVM_VERSION}` branch built from source (matches LLVM variant); skipped when no numeric LLVM is installed (p2996 permutations) |
 | MRDocs | v0.8.0 binary release |
 | Mermaid CLI | Installed globally via npm |
 | Node.js / npm | Official Node.js tarball v25.2.1 |
@@ -71,7 +71,7 @@ Environment variables:
 ### Verification Commands
 Run these inside the devcontainer to confirm key tools are available (adjust versions to the selected bake target):
 ```bash
-clang++-21 --version     # or clang++-22 / clang++-p2996
+clang++-21 --version     # or clang++-22 / clang++-p2996 (only in p2996 tags)
 gcc-15 --version        # or gcc-14
 git --version
 cmake --version
