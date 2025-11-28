@@ -63,6 +63,18 @@ This note explains how to make SSH into the devcontainer work when the container
 - Re-run the script whenever `DEVCONTAINER_REMOTE_HOST`, `DEVCONTAINER_REMOTE_USER`, or `DEVCONTAINER_SSH_PORT` changes in the env file.
 - Connect with the generated config: `ssh -F ~/.ssh/cpp-devcontainer.conf cpp-devcontainer` (or point to the alternate output file you chose).
 
+## Notes for CI / self-hosted runners
+- Make cache path configurable: set `DEVCONTAINER_CACHE_DIR` (e.g., `${{ runner.temp }}/buildx-cache` in GitHub Actions) and `DEVCONTAINER_BUILDER_NAME` to isolate builders per runner.
+- Registry cache optional: set `DEVCONTAINER_REGISTRY_REF` (e.g., `ghcr.io/<org>/cpp-devcontainer`) to enable cache-from/cache-to across runs, or `--no-registry-cache` to keep it local.
+- Context and base tag: set `DOCKER_CONTEXT` to the remote engine context and `BASE_IMAGE`/`DEVCONTAINER_BASE_IMAGE` if you publish base images to a registry for CI reuse; otherwise keep using the remote engine’s local tags.
+- Example runner env (self-hosted):  
+  ```
+  DOCKER_CONTEXT=ssh-<host>
+  DEVCONTAINER_CACHE_DIR=/home/<runner>/buildx-cache
+  DEVCONTAINER_BUILDER_NAME=devcontainer-ci
+  DEVCONTAINER_REGISTRY_REF=ghcr.io/<org>/cpp-devcontainer  # or unset
+  ```
+
 ## Quick verification
 1) From your Mac (ProxyJump): `ssh -J rmanaloto@c24s1.ch2 -i ~/.ssh/id_ed25519 -p 9222 rmanaloto@127.0.0.1` (remove stale host key if prompted).
 2) On the remote host: `ssh -i ~/.ssh/id_ed25519 -p 9222 <user>@127.0.0.1` (or whichever key matches your `KEY_CACHE`).
