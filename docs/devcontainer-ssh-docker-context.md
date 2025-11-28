@@ -10,6 +10,7 @@ This note explains how to make SSH into the devcontainer work when the container
 - Container runs on a remote host (e.g., `c24s1.ch2`) via Docker SSH context.
 - Container user = remote host user (`rmanaloto` by default), so file ownership matches the host filesystem.
 - SSH access into the container on published port 9222 using the developer’s keys without touching the host’s primary `~/.ssh`.
+- Multiple permutations/ports: create a per-permutation env file (e.g., `config/env/devcontainer.gcc14-clang21.env`) with a unique `DEVCONTAINER_SSH_PORT`. Re-run `scripts/generate_cpp_devcontainer_ssh_config.sh --env-file <env> --output ~/.ssh/cpp-devcontainer-<name>.conf` to get a matching SSH alias. Point `CONFIG_ENV_FILE` to the same env when running `deploy_remote_devcontainer.sh` or `run_local_devcontainer.sh` so the devcontainer binds the right port.
 
 ## Required steps
 1) **Docker context**  
