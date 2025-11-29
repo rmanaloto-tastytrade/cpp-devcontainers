@@ -35,6 +35,8 @@ DEVCONTAINER_CLI_VERSION=${DEVCONTAINER_CLI_VERSION:-"0.80.2"}
 DOCKER_CONTEXT=${DOCKER_CONTEXT:-}
 WORKSPACE_PATH=${WORKSPACE_PATH:-"/home/${CONTAINER_USER}/dev/devcontainers/workspace"}
 DEVCONTAINER_SSH_PORT=${DEVCONTAINER_SSH_PORT:-9222}
+DEVCONTAINER_SKIP_BAKE=${DEVCONTAINER_SKIP_BAKE:-0}
+DEVCONTAINER_VERIFY=${DEVCONTAINER_VERIFY:-0}
 
 echo "[remote] Repo source       : $REPO_PATH"
 echo "[remote] Sandbox workspace : $SANDBOX_PATH"
@@ -133,37 +135,40 @@ fi
 
 echo "[remote] Ensuring baked images (base: $BASE_IMAGE, dev: $DEV_IMAGE)..."
 pushd "$SANDBOX_PATH" >/dev/null
-# Validate bake file before building
-"$SCRIPT_DIR/check_docker_bake.sh" "$SANDBOX_PATH"
-ensure_devcontainer_cli
-# Validate devcontainer configuration syntax
-"$SCRIPT_DIR/check_devcontainer_config.sh" "$SANDBOX_PATH"
-# Build base if missing
-if ! docker image inspect "$BASE_IMAGE" >/dev/null 2>&1; then
-  echo "[remote] Base image $BASE_IMAGE missing; baking base..."
+# Validate bake/devcontainer config unless skipping bake
+if [[ "$DEVCONTAINER_SKIP_BAKE" != "1" ]]; then
+  "$SCRIPT_DIR/check_docker_bake.sh" "$SANDBOX_PATH"
+  ensure_devcontainer_cli
+  "$SCRIPT_DIR/check_devcontainer_config.sh" "$SANDBOX_PATH"
+  # Build base if missing
+  if ! docker image inspect "$BASE_IMAGE" >/dev/null 2>&1; then
+    echo "[remote] Base image $BASE_IMAGE missing; baking base..."
+    docker buildx bake \
+      -f "$SANDBOX_PATH/.devcontainer/docker-bake.hcl" \
+      base \
+      --set base.tags="$BASE_IMAGE" \
+      --set '*.args.BASE_IMAGE'="$BASE_IMAGE" \
+      --set '*.args.USERNAME'="$CONTAINER_USER" \
+      --set '*.args.USER_UID'="$CONTAINER_UID" \
+      --set '*.args.USER_GID'="$CONTAINER_GID"
+  else
+    echo "[remote] Found base image $BASE_IMAGE."
+  fi
+
+  # Rebuild devcontainer with current user/uid/gid
+  echo "[remote] Baking devcontainer image (user=${CONTAINER_USER}, uid=${CONTAINER_UID}, gid=${CONTAINER_GID})..."
   docker buildx bake \
     -f "$SANDBOX_PATH/.devcontainer/docker-bake.hcl" \
-    base \
+    devcontainer \
     --set base.tags="$BASE_IMAGE" \
+    --set devcontainer.tags="$DEV_IMAGE" \
     --set '*.args.BASE_IMAGE'="$BASE_IMAGE" \
     --set '*.args.USERNAME'="$CONTAINER_USER" \
     --set '*.args.USER_UID'="$CONTAINER_UID" \
     --set '*.args.USER_GID'="$CONTAINER_GID"
 else
-  echo "[remote] Found base image $BASE_IMAGE."
+  echo "[remote] DEVCONTAINER_SKIP_BAKE=1; skipping bake and using image ${DEV_IMAGE}."
 fi
-
-# Always rebuild devcontainer with current user/uid/gid
-echo "[remote] Baking devcontainer image (user=${CONTAINER_USER}, uid=${CONTAINER_UID}, gid=${CONTAINER_GID})..."
-docker buildx bake \
-  -f "$SANDBOX_PATH/.devcontainer/docker-bake.hcl" \
-  devcontainer \
-  --set base.tags="$BASE_IMAGE" \
-  --set devcontainer.tags="$DEV_IMAGE" \
-  --set '*.args.BASE_IMAGE'="$BASE_IMAGE" \
-  --set '*.args.USERNAME'="$CONTAINER_USER" \
-  --set '*.args.USER_UID'="$CONTAINER_UID" \
-  --set '*.args.USER_GID'="$CONTAINER_GID"
 popd >/dev/null
 
 export DEVCONTAINER_USER="${CONTAINER_USER}"
@@ -203,6 +208,10 @@ docker exec "$CONTAINER_ID" sh -c 'echo "--- LLVM packages list ---"; if [ -f /o
     fi
   else
     echo "[remote] WARNING: No ${SSH_TEST_KEY} found for SSH test."
+  fi
+  if [[ "$DEVCONTAINER_VERIFY" == "1" ]]; then
+    echo "[remote] Running post-up verification (image ${DEV_IMAGE}, port ${DEVCONTAINER_SSH_PORT})..."
+    "${SANDBOX_PATH}/scripts/verify_devcontainer.sh" --image "${DEV_IMAGE}" --ssh-port "${DEVCONTAINER_SSH_PORT}" --require-ssh
   fi
 else
   echo "[remote] WARNING: unable to locate container for inspection."
