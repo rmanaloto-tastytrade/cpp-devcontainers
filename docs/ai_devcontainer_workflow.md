@@ -27,6 +27,8 @@ Fast on-boarding for AI agents (Claude/Code, Codex CLI) to build, run, and valid
 - Run on the remote host (preferred): `scripts/run_local_devcontainer.sh` (invoked via SSH by `scripts/deploy_remote_devcontainer.sh`). It rsyncs the repo into a sandbox, optionally bakes, then runs `devcontainer up` with `127.0.0.1:<port>→2222`.
 - From the Mac, connect with ProxyJump:  
   `ssh -J ${DEVCONTAINER_REMOTE_USER}@${DEVCONTAINER_REMOTE_HOST} -p ${DEVCONTAINER_SSH_PORT} ${CONTAINER_USER}@127.0.0.1`
+- Shortcut script (clears known_hosts entry, then SSH):  
+  `CONFIG_ENV_FILE=config/env/devcontainer.gcc15-clang22.env scripts/ssh_devcontainer.sh`
 - Per-permutation env files (ports auto-increment):  
   - `config/env/devcontainer.env` (gcc15-clangp2996, port 9222)  
   - `config/env/devcontainer.gcc14-clang21.env` (9223)  

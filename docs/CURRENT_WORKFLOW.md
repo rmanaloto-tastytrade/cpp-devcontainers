@@ -83,6 +83,10 @@ Access pattern: host port 9222 is bound to 127.0.0.1; reach it via SSH tunnel or
   ssh -J rmanaloto@c24s1.ch2 -i ~/.ssh/id_ed25519 -p 9222 rmanaloto@127.0.0.1 'echo CONTAINER_OK && hostname && whoami'
   ssh -J rmanaloto@c24s1.ch2 -i ~/.ssh/id_ed25519 -p 9222 rmanaloto@127.0.0.1 'echo $SSH_AUTH_SOCK && ssh -T -p 443 -o Hostname=ssh.github.com git@github.com || true'
   ```
+- Convenience SSH helper (cleans known_hosts entry, then connects using env file defaults):
+  ```bash
+  CONFIG_ENV_FILE=config/env/devcontainer.gcc15-clang22.env scripts/ssh_devcontainer.sh
+  ```
 - In-container verification:
   ```bash
   echo "$SSH_AUTH_SOCK"            # Expected: /tmp/ssh-agent.socket
