@@ -9,4 +9,6 @@ logs/
 
 .idea/
 # Local environment overrides (not committed)
-config/env/devcontainer.env
+config/env/devcontainer*.env
+!config/env/devcontainer.env.example
+!config/env/README.md
