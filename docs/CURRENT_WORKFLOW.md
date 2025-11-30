@@ -1,21 +1,22 @@
 # Current Workflow: Remote Devcontainer Architecture
 
-**Last Updated:** 2025-01-24  
-**Status:** Production (port exposure still open)
+**Last Updated:** 2025-02-12  
+**Status:** Production (multi-permutation devcontainers running)
 
 > Host/user/port values shown below (e.g., c24s1.ch2, 9222, rmanaloto) are examples. Set `DEVCONTAINER_REMOTE_HOST/USER/SSH_PORT` (or `config/env/devcontainer.env`) to your own values before running scripts.
 
-## Update (2025-01-24)
-- Container user = remote host user (`rmanaloto`), uid/gid resolved on the host during deploy.
+## Update (2025-02-12)
+- All permutations are active on the remote host: gcc14/15 × clang21/22/p2996 on ports 9222–9228 (see `config/env/devcontainer*.env` for exact bindings).
+- Clang branch mapping is centralized (`scripts/clang_branch_utils.sh`), so branch names (stable/qualification/development) translate to apt pockets automatically during bake and verification.
+- Container user defaults to the remote host user (`rmanaloto`), uid/gid resolved on the host during deploy.
 - Only public keys are staged: `deploy_remote_devcontainer.sh` copies the chosen `*.pub` to the host cache (default `~/.ssh`); `run_local_devcontainer.sh` installs them into container `authorized_keys`.
 - Host SSH agent socket is bind-mounted (`SSH_AUTH_SOCK` → `/tmp/ssh-agent.socket`), so outbound GitHub SSH from the container uses the host agent with port 443 fallback. No private keys live in the container filesystem.
-- Defaults live in `config/env/devcontainer.env` (host/user/port). `DOCKER_CONTEXT` keeps all Docker traffic on the remote engine.
-- Port binding hardened: container SSH is published on `127.0.0.1:${DEVCONTAINER_SSH_PORT:-9222}`; connect via ProxyJump or an SSH tunnel through the host.
+- Port binding is limited to loopback: container SSH is published on `127.0.0.1:${DEVCONTAINER_SSH_PORT:-9222}`; connect via ProxyJump or an SSH tunnel through the host.
 
 ## Executive Summary
 - Deploy from the Mac via `scripts/deploy_remote_devcontainer.sh`; it pushes the branch, ensures the Docker SSH context, copies a public key to the host cache, then triggers the remote rebuild.
 - Remote host (`c24s1.ch2`) rebuilds the sandbox (`~/dev/devcontainers/SlotMap`), stages host `~/.ssh/*.pub`, bakes images with BuildKit, and runs `devcontainer up` with the host agent socket mounted.
-- Container lives at `/home/rmanaloto/workspace`, exposes SSH on host port 9222 (maps to container 2222), and uses the host agent for outbound GitHub SSH (port 443 fallback).
+- Container lives at `/home/rmanaloto/workspace`, exposes SSH on the configured host port (loopback-only to container 2222), and uses the host agent for outbound GitHub SSH (port 443 fallback).
 
 ## Architecture Overview
 ```
@@ -65,7 +66,7 @@ Access pattern: host port 9222 is bound to 127.0.0.1; reach it via SSH tunnel or
   - Recreates the sandbox at `~/dev/devcontainers/SlotMap` and workspace source at `~/dev/devcontainers/workspace` from the canonical repo (`~/dev/github/SlotMap`).
   - Stages `KEY_CACHE/*.pub` into `.devcontainer/ssh` in both sandbox and workspace; no private keys are copied.
   - Validates `.devcontainer/docker-bake.hcl` and `devcontainer.json`; installs devcontainer CLI `0.80.2` if needed.
-  - Bakes `dev-base:local` if missing, then always bakes `devcontainer:local` with user/uid/gid args.
+  - Bakes `dev-base:local` if missing, then bakes the requested image (default `devcontainer:local`; override via env per permutation) with user/uid/gid args.
   - Runs `devcontainer up` with exports:
     - `REMOTE_WORKSPACE_PATH=/home/<user>/dev/devcontainers/workspace`
     - `SSH_AUTH_SOCK` from the host (bind-mounted to `/tmp/ssh-agent.socket`)
@@ -73,6 +74,8 @@ Access pattern: host port 9222 is bound to 127.0.0.1; reach it via SSH tunnel or
   - Prints container status, lists sshd, and attempts an SSH self-test using the host key if present.
 
 ### Phase 3: Connectivity & Validation
+- Automated check (preferred):  
+  `DOCKER_HOST=ssh://rmanaloto@c24s1.ch2 CONFIG_ENV_FILE=config/env/devcontainer.gcc15-clang21.env scripts/verify_devcontainer.sh --require-ssh`
 - From the Mac, clear stale host keys if needed: `ssh-keygen -R "[c24s1.ch2]:9222"`.
 - Run `./scripts/test_devcontainer_ssh.sh --host c24s1.ch2 --port 9222 --user rmanaloto --key ~/.ssh/id_ed25519 --clear-known-host` (uses ProxyJump by default).
 - Manual spot checks from the Mac (ProxyJump):

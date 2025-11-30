@@ -1,85 +1,81 @@
-# AI Guide: Devcontainer Build, Bake, and SSH Workflow
+## Purpose
+Fast on-boarding for AI agents (Claude/Code, Codex CLI) to build, run, and validate SlotMap devcontainers on the remote Docker host.
 
-Audience: AI agents (Claude/Code, Codex CLI) needing to manage SlotMap devcontainers on remote Docker hosts.
+## What we build
+- Matrix images come from `.devcontainer/docker-bake.hcl` and follow the tags `devcontainer:gcc{14|15}-clang{21|22|p2996}` plus `devcontainer:local` (default clang-p2996/gcc15).
+- Toolchain layout: everything manually installed lives under `/usr/local` inside the final image (gcc builds symlinked there, clang installs from apt.llvm.org pockets, p2996 staged under `/usr/local/clang-p2996`).
+- Branch→version mapping is centralized in `scripts/clang_branch_utils.sh`:
+  - `stable→20`, `qualification→21`, `development→22`, numeric passthrough.
+  - APT pockets: 22 uses `llvm-toolchain-noble`, others use `llvm-toolchain-noble-<version>`.
+- Dockerfile args surfaced to bake: `CLANG_VARIANT`, `CLANG_BRANCH`, `LLVM_APT_POCKET`, `GCC_VERSION`, `ENABLE_CLANG_P2996`, `ENABLE_GCC15`, `ENABLE_IWYU`.
 
-## Quick Facts
-- Primary env defaults: `config/env/devcontainer.env` (host `c24s1.ch2`, user `rmanaloto`, port `9222`). Variant env for an extra container port: `config/env/devcontainer.gcc14-clang21.env` (port `9223`, same host/user).
-- Authoritative workflow doc: `docs/remote-docker-context.md`.
-- Images and tags are defined in `.devcontainer/docker-bake.hcl`; builds happen on the remote host via Docker SSH context.
-- Default compiler inside the devcontainer: `clang-21` with `gcc-15` staged under `/opt/gcc-15` when the gcc15 permutation builds successfully.
+## Build workflow (Docker Bake)
+- Bake file: `.devcontainer/docker-bake.hcl`.
+- Helper scripts:
+  - `.devcontainer/scripts/resolve_llvm_branches.sh` (discovers latest qualification/development numbers).
+  - `scripts/clang_branch_utils.sh` (maps branch name → variant/pocket for Dockerfile and verify).
+  - `.devcontainer/scripts/build_remote_images.sh` (not modified today, still drives the matrix).
+- To build a permutation on the remote host from the Mac:  
+  ```bash
+  DOCKER_HOST=ssh://rmanaloto@c24s1.ch2 \
+  CONFIG_ENV_FILE=config/env/devcontainer.gcc15-clang22.env \
+  docker buildx bake -f .devcontainer/docker-bake.hcl devcontainer_gcc15_clang22
+  ```
+- Full matrix is available: `devcontainer:gcc14-clang21`, `gcc14-clang22`, `gcc14-clangp2996`, `gcc15-clang21`, `gcc15-clang22`, `gcc15-clangp2996`, plus `devcontainer:local`.
 
-## Image Topology (docker-bake.hcl)
-- `base` (tag `dev-base:local`): Ubuntu 24.04, core build deps, gcc from PPA (14/15), clang via `llvm.sh` (numeric variants), binutils/gdb, ninja, make, git, cmake, perf, etc.
-- Parallel tool stages (all inherit `prebuilt_base`): `gcc15` (source build under `/opt/gcc-15`), `clang_p2996` (Bloomberg fork under `/opt/clang-p2996`), `node_mermaid`, `mold`, `gh_cli`, `ccache`, `sccache`, `ripgrep`, `cppcheck`, `valgrind`, `python_tools`, `pixi`, `iwyu`, `mrdocs`, `jq`, `awscli`.
-- `tools_merge`: copies staged tool artifacts into a single layer and bootstraps vcpkg.
-- Final images:
-  - `devcontainer` (tag `devcontainer:local`) uses defaults (`GCC_VERSION=15`, `CLANG_VARIANT=21`, IWYU on, clang_p2996 off).
-  - Matrix tags (examples): `devcontainer:gcc14-clang21`, `devcontainer:gcc14-clang22`, `devcontainer:gcc14-clangp2996`, `devcontainer:gcc15-clang21`, `devcontainer:gcc15-clang22`, `devcontainer:gcc15-clangp2996`. Flags: `ENABLE_GCC15`, `ENABLE_CLANG_P2996`, `ENABLE_IWYU` adjust contents.
-- Build args resolved dynamically:
-  - `CLANG_QUAL` / `CLANG_DEV` scraped via `.devcontainer/scripts/resolve_llvm_branches.sh`.
-  - `build_remote_images.sh` maps selector `qualification|development|p2996|numeric` → bake target and sets cache sources.
+## Running the devcontainers
+- Run on the remote host (preferred): `scripts/run_local_devcontainer.sh` (invoked via SSH by `scripts/deploy_remote_devcontainer.sh`). It rsyncs the repo into a sandbox, optionally bakes, then runs `devcontainer up` with `127.0.0.1:<port>→2222`.
+- From the Mac, connect with ProxyJump:  
+  `ssh -J ${DEVCONTAINER_REMOTE_USER}@${DEVCONTAINER_REMOTE_HOST} -p ${DEVCONTAINER_SSH_PORT} ${CONTAINER_USER}@127.0.0.1`
+- Per-permutation env files (ports auto-increment):  
+  - `config/env/devcontainer.env` (gcc15-clangp2996, port 9222)  
+  - `config/env/devcontainer.gcc14-clang21.env` (9223)  
+  - `config/env/devcontainer.gcc14-clang22.env` (9227)  
+  - `config/env/devcontainer.gcc14-clangp2996.env` (9228)  
+  - `config/env/devcontainer.gcc15-clang21.env` (9225)  
+  - `config/env/devcontainer.gcc15-clang22.env` (9226)  
+  - `config/env/devcontainer.gcc15-clangp2996.env` (9224)
 
-## Building Images (remote Docker context)
-Recommended: run from the Mac, targeting the remote host via Docker SSH context.
+## Validation pipeline (fully scripted)
+- Use `scripts/verify_devcontainer.sh` to check both the image and a running container. It:
+  - Sources `CONFIG_ENV_FILE` (defaults to `config/env/devcontainer.env`) and `scripts/clang_branch_utils.sh`.
+  - Infers expected compiler versions from the env/tag, builds a tiny tool check script, and runs it with `docker run` against the image.
+  - Cleans `known_hosts` entry for the target SSH port, then SSHes (ProxyJump through `${DEVCONTAINER_REMOTE_HOST}`) into the running container and re-runs the same checks. `--require-ssh` enforces container reachability.
+- Example (Mac → remote docker via SSH transport):  
+  ```bash
+  DOCKER_HOST=ssh://rmanaloto@c24s1.ch2 \
+  CONFIG_ENV_FILE=config/env/devcontainer.gcc14-clang22.env \
+  scripts/verify_devcontainer.sh --require-ssh
+  ```
+- Current results (all succeeded via `--require-ssh`): ports 9222/9223/9224/9225/9226/9227/9228 with expected clang/gcc/ninja/cmake/vcpkg/mrdocs.
 
-1) Ensure env is loaded: `CONFIG_ENV_FILE=config/env/devcontainer.env`.
-2) Build helper (remote):  
-   ```bash
-   .devcontainer/scripts/build_remote_images.sh \
-     --llvm-version p2996   # or qualification|development|21|22
-     --gcc-version 15       # 14 or 15
-     # --all to build full matrix
-   ```
-   - Derives/creates context `ssh-${DEVCONTAINER_REMOTE_HOST}` unless overridden by `DEVCONTAINER_DOCKER_CONTEXT`.
-   - Picks builder `devcontainer-remote` (or `DEVCONTAINER_BUILDER_NAME`); uses local/registry cache if configured.
-   - Targets map to bake entries: `devcontainer_gcc${N}_clang_qual`, `_clang_dev`, `_clangp2996`, or `matrix` when `--all`.
-3) If base is missing on the remote, bake it explicitly (one-time):  
-   `DOCKER_CONTEXT=ssh-<host> docker buildx bake -f .devcontainer/docker-bake.hcl base --set base.output=type=docker`
-
-## Running the Devcontainer
-### From the Mac (preferred)
-- Script: `scripts/deploy_remote_devcontainer.sh` (reads `config/env/devcontainer.env` unless overridden).
-- Actions:
-  - Pushes current branch.
-  - Copies local public key to remote key cache (`~/devcontainers/ssh_keys`).
-  - Invokes `scripts/run_local_devcontainer.sh` on the remote host (builds image if needed, runs `devcontainer up`).
-  - Binds remote host port `DEVCONTAINER_SSH_PORT` → container port 2222 (`devcontainer.json` sets `127.0.0.1:<port>:2222`).
-- Connect after deploy (example for default env):  
-  `ssh -J rmanaloto@c24s1.ch2 -p 9222 slotmap@127.0.0.1` (replace user/port with env values). Keys are staged from the remote cache; SSH agent is mounted via `SSH_AUTH_SOCK`.
-
-### When already on the remote host
-- Script: `scripts/run_local_devcontainer.sh` (runs bake + `devcontainer up` locally on the host). Supply `DEVCONTAINER_SSH_PORT`, `CONTAINER_USER/UID/GID` if you need overrides.
-- Workspace mount defaults: host path `~/dev/devcontainers/workspace` → container `/home/${DEVCONTAINER_USER}/workspace` (`devcontainer.json`).
-
-## SSH Setup and Keys
-- Host → remote Docker engine: Docker SSH context (`docker context create <name> --docker "host=ssh://<user>@<host>"`).
-- Container inbound SSH:
-  - Port: `DEVCONTAINER_SSH_PORT` (defaults 9222; `config/env/devcontainer.gcc14-clang21.env` example uses 9223).
-  - Keys: public keys staged under `~/devcontainers/ssh_keys` on the remote; container `authorized_keys` populated in `post_create.sh`.
+## SSH and key handling
+- Host→engine: set `DOCKER_HOST=ssh://<user>@<host>` or create a docker context (see `docs/remote-docker-context.md`).
+- Container inbound:
+  - Port from the env files; ProxyJump uses `${DEVCONTAINER_REMOTE_USER}@${DEVCONTAINER_REMOTE_HOST}`.
+  - Keys staged from the remote `~/devcontainers/ssh_keys` directory; `run_local_devcontainer.sh` copies all `*.pub` from that cache into `.devcontainer/ssh`.
   - Agent forwarding: container binds `/tmp/ssh-agent.socket` from host `SSH_AUTH_SOCK`.
-- ProxyJump examples:
-  - From Mac into container: `ssh -J ${DEVCONTAINER_REMOTE_USER}@${DEVCONTAINER_REMOTE_HOST} -p ${DEVCONTAINER_SSH_PORT} ${DEVCONTAINER_USER}@127.0.0.1`.
-  - Git over 443 inside container verified via `ssh -T git@ssh.github.com -p 443`.
+  - Host key hygiene: `verify_devcontainer.sh` runs `ssh-keygen -R "[127.0.0.1]:<port>"` before connecting.
 
-## Parsing Config for Hosts/Ports/Users
-- Primary file: `config/env/devcontainer.env` (sets `DEVCONTAINER_REMOTE_HOST`, `DEVCONTAINER_REMOTE_USER`, `DEVCONTAINER_SSH_PORT`, optional `DEVCONTAINER_DOCKER_CONTEXT`, `DEVCONTAINER_BUILDER_NAME`).
-- Alternate env examples live alongside (e.g., `config/env/devcontainer.gcc14-clang21.env` for a secondary SSH port).
-- Scripts read `CONFIG_ENV_FILE` override if provided, then allow CLI flags (`--remote-host`, `--remote-user`, `--remote-port`, `--docker-context`, etc.).
-- Container identity defaults to remote user unless `CONTAINER_USER/UID/GID` are passed; resolved via `ssh id -u/-g` within `deploy_remote_devcontainer.sh`.
+## Image contents (permutation highlights)
+- clang21/22 come from apt.llvm.org pockets chosen by `LLVM_APT_POCKET`; clang22 uses the unversioned `llvm-toolchain-noble`.
+- gcc14/15 built from source and installed under `/usr/local` with versioned symlinks.
+- Optional extras toggled by bake flags: p2996 toolchain, IWYU, Node+mermaid, mold, ccache/sccache, Python+pipx toolset, vcpkg bootstrap, gh-cli, ripgrep/cppcheck/valgrind, mrdocs, jq, awscli, pixi.
 
-## Current State and Pending Items
-- Latest change: `.devcontainer/Dockerfile` now uses GCC prerequisite mirrors `gcc.gnu.org` / `ftpmirror.gnu.org` and clears the gcc15 build dir before configuring.
-- GCC 15 source build still fails intermittently in the `devcontainer_gcc15_clangp2996` target due to `config.cache` pollution during configure; last bake was interrupted mid-run. Next step: rerun bake; if the error persists, add an explicit `config.cache` purge/distclean inside the gcc15 stage.
-- Remote images present on `ssh-c24s1.ch2`: `dev-base:local`, `devcontainer:local`, `devcontainer:gcc14-clang21`, `devcontainer:gcc15-clang21` (others pending successful bake).
+## Operational checklist
+- For a fresh agent session:
+  1) Pick the env file for the permutation you want.
+  2) Build (or skip if already built) with `docker buildx bake ...` using `DOCKER_HOST=ssh://...`.
+  3) Run the devcontainer via `deploy_remote_devcontainer.sh` (Mac) or `run_local_devcontainer.sh` (on the host).
+  4) Validate with `scripts/verify_devcontainer.sh --require-ssh` using the same env.
+  5) If SSH fails, clear hostkeys with `ssh-keygen -R "[127.0.0.1]:<port>"` (already done in the script) and retry.
 
-## Cheat Sheet (commands)
-- Build default (qualification clang + gcc15):  
-  `.devcontainer/scripts/build_remote_images.sh`
-- Build clang-p2996 + gcc15:  
-  `.devcontainer/scripts/build_remote_images.sh --llvm-version p2996`
-- Build full matrix:  
-  `.devcontainer/scripts/build_remote_images.sh --all`
-- Deploy/run devcontainer on remote host (from Mac):  
-  `DEVCONTAINER_REMOTE_HOST=c24s1.ch2 DEVCONTAINER_REMOTE_USER=rmanaloto DEVCONTAINER_SSH_PORT=9222 ./scripts/deploy_remote_devcontainer.sh`
-- List remote images:  
-  `docker --context ssh-c24s1.ch2 images`
+## Current state (validated)
+- All permutations are built on `c24s1.ch2` and running:  
+  `devcontainer:local` (9222), `gcc14-clang21` (9223), `gcc14-clang22` (9227), `gcc14-clangp2996` (9228), `gcc15-clang21` (9225), `gcc15-clang22` (9226), `gcc15-clangp2996` (9224).
+- Verification shows expected compiler/tool versions in both image and running containers; clang22 now installs from the development pocket without 404s.
+
+## Pointers to other docs
+- Remote docker context details: `docs/remote-docker-context.md`
+- SSH specifics: `docs/ssh-configurations.md`, `docs/ssh-key-management-options.md`, `docs/devcontainer-ssh-docker-context.md`
+- Branch comparison notes: `docs/devcontainer-branch-comparison.md`

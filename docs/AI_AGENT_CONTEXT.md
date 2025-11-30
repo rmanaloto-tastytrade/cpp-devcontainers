@@ -2,7 +2,7 @@
 
 **Format:** Machine-readable facts for AI agent consumption
 **Purpose:** Provide unambiguous context to prevent hallucination
-**Last Updated:** 2025-01-22
+**Last Updated:** 2025-02-12
 
 > Note: Host/user/port strings (e.g., c24s1, 9222, rmanaloto) in this file are examples. Replace with your own `DEVCONTAINER_REMOTE_HOST/DEVCONTAINER_REMOTE_USER/DEVCONTAINER_SSH_PORT` when executing commands.
 
@@ -29,11 +29,19 @@ remote_host:
   ssh_keys_cache: "~/.ssh"     # public keys only; private keys stay on host agent
 
 container:
-  image_name: "devcontainer:local"
+  image_name: "devcontainer:<permutation>"   # default: local (gcc15+clang-p2996)
   user: "<remote_user>"
   workspace: "/home/<remote_user>/workspace"
   ssh_port_container: 2222
   ssh_port_host: ${DEVCONTAINER_SSH_PORT:-9222}
+  permutations_env:                           # env files under config/env/
+    - devcontainer.env              # port 9222 (gcc15-clangp2996)
+    - devcontainer.gcc14-clang21.env  # port 9223
+    - devcontainer.gcc15-clangp2996.env # port 9224
+    - devcontainer.gcc15-clang21.env  # port 9225
+    - devcontainer.gcc15-clang22.env  # port 9226
+    - devcontainer.gcc14-clang22.env  # port 9227
+    - devcontainer.gcc14-clangp2996.env # port 9228
 ```
 
 ### File Paths (Exact)
@@ -42,6 +50,8 @@ container:
 deployment_script: "scripts/deploy_remote_devcontainer.sh"
 build_script: "scripts/run_local_devcontainer.sh"
 test_script: "scripts/test_devcontainer_ssh.sh"
+verify_script: "scripts/verify_devcontainer.sh"
+clang_branch_utils: "scripts/clang_branch_utils.sh"
 devcontainer_config: ".devcontainer/devcontainer.json"
 docker_bake_file: ".devcontainer/docker-bake.hcl"
 dockerfile: ".devcontainer/Dockerfile"

@@ -21,6 +21,14 @@ if [[ -f "$CONFIG_ENV_FILE" ]]; then
   source "$CONFIG_ENV_FILE"
 fi
 
+# Optional clang branch resolver
+CLANG_UTILS_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/clang_branch_utils.sh"
+if [[ -f "$CLANG_UTILS_PATH" ]]; then
+  # shellcheck source=/dev/null
+  source "$CLANG_UTILS_PATH"
+  resolve_clang_branch
+fi
+
 REPO_PATH=${REPO_PATH:-"$HOME/dev/github/SlotMap"}
 SANDBOX_PATH=${SANDBOX_PATH:-"$HOME/dev/devcontainers/SlotMap"}
 KEY_CACHE=${KEY_CACHE:-"$HOME/.ssh"}
@@ -113,6 +121,25 @@ if [[ "$WORKSPACE_PATH" != "$SANDBOX_PATH" ]]; then
   rsync -a --delete "$REPO_PATH"/ "$WORKSPACE_PATH"/
 fi
 
+update_devcontainer_image() {
+  local target_path="$1/.devcontainer/devcontainer.json"
+  if [[ -f "$target_path" && -n "$DEV_IMAGE" ]]; then
+    if command -v jq >/dev/null 2>&1; then
+      local tmp
+      tmp="$(mktemp)"
+      jq --arg image "$DEV_IMAGE" --arg user "$CONTAINER_USER" \
+        '.image=$image | .remoteUser=$user' "$target_path" >"$tmp" && mv "$tmp" "$target_path"
+    else
+      echo "[remote] WARNING: jq not available; leaving ${target_path} unchanged." >&2
+    fi
+  fi
+}
+
+update_devcontainer_image "$SANDBOX_PATH"
+if [[ "$WORKSPACE_PATH" != "$SANDBOX_PATH" ]]; then
+  update_devcontainer_image "$WORKSPACE_PATH"
+fi
+
 SSH_TARGET="$SANDBOX_PATH/$SSH_SUBDIR"
 mkdir -p "$SSH_TARGET"
 
@@ -178,6 +205,7 @@ export DEVCONTAINER_WORKSPACE_PATH="${WORKSPACE_PATH}"
 export REMOTE_WORKSPACE_PATH="${WORKSPACE_PATH}"
 export REMOTE_SSH_SYNC_DIR="${KEY_CACHE}"
 export DEVCONTAINER_SSH_PORT="${DEVCONTAINER_SSH_PORT}"
+export DEVCONTAINER_IMAGE="${DEV_IMAGE}"
 
 echo "[remote] Building container user ${CONTAINER_USER} (uid=${CONTAINER_UID}, gid=${CONTAINER_GID})"
 

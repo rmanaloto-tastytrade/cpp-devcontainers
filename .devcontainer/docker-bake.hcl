@@ -64,6 +64,7 @@ target "_base" {
     CLANG_P2996_REPO   = "https://github.com/bloomberg/clang-p2996.git"
     CLANG_P2996_PREFIX = "/opt/clang-p2996"
     CLANG_P2996_JOBS   = "4"
+    LLVM_APT_POCKET    = ""
     ENABLE_CLANG_P2996 = "0"
     ENABLE_GCC15       = "1"
     ENABLE_IWYU        = "1"
