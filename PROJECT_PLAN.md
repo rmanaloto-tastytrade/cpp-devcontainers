@@ -1,10 +1,9 @@
 # Project Plan
 
 1. **Environment & Tooling (Current phase)**  
-   - **Remote Docker bake + devcontainer matrix** – baked on `c24s1.ch2` (all permutations built and verified). On `c0903s4.ny5`, images are baked; `gcc14-clang21` container is up and validated via `scripts/run_local_devcontainer.sh` + `scripts/verify_devcontainer.sh --require-ssh` after fixing SSH key paths (`~/.ssh/tastytrade_key`). Remaining permutations on `c0903s4.ny5` still need run/verify.  
+   - **Remote Docker bake + devcontainer matrix** – all permutations built and verified on `c24s1.ch2` and `c0903s4.ny5` (ports 9501–9506) using `scripts/run_local_devcontainer.sh` + `scripts/verify_devcontainer.sh --require-ssh`. Tooling present: clang/gcc variants, ninja, cmake, vcpkg, mrdocs, mutagen 0.18.1, all under `/usr/local`.  
    - Clang branch mapping is centralized in `scripts/clang_branch_utils.sh` (stable→20, qualification→21, development→22) and flows through Dockerfile/bake/verify.  
-   - Tooling installs live under `/usr/local` (clang via apt.llvm.org pockets, gcc from source with symlinks, p2996 staged under `/usr/local/clang-p2996`).  
-   - **Mutagen sync planned (later)** – we will add a mutagen session to sync `config/env/*.env` and workspace files from macOS to the remote host/devcontainer to avoid ad-hoc scp. For now, env files are copied manually. See `docs/mutagen_sync.md` for the intended approach; implementation is deferred.  
+   - **Mutagen validation (in progress)** – `scripts/verify_mutagen.sh`, `docs/mutagen-validation.md`, `docs/mutagen-research.md`. Current blocker: Mutagen constructs a bad ssh command (`host` becomes literal `ssh`), so `sync create` fails; plain SSH works. Next: run the Mutagen daemon in foreground with a logging ssh wrapper, enforce ssh command via `~/.mutagen.yml` or PATH-wrapped ssh, then re-run `verify_devcontainer.sh --require-ssh` with `REQUIRE_MUTAGEN=1` across all envs.  
    - Add/maintain workflow diagrams and ensure Dockerfile lint rules remain satisfied; keep package versions pinned once stable.  
    - Keep `docs/ai_devcontainer_workflow.md` and `docs/CURRENT_WORKFLOW.md` as the entry points for new agents.
 

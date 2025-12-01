@@ -12,6 +12,7 @@ set -euo pipefail
 #   --image devcontainer:gcc15-clangp2996
 #   --ssh-port ${DEVCONTAINER_SSH_PORT:-9222}
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 CONFIG_ENV_FILE="${CONFIG_ENV_FILE:-"$REPO_ROOT/config/env/devcontainer.env"}"
 # shellcheck source=/dev/null
@@ -200,4 +201,10 @@ else
   if [[ "${REQUIRE_SSH}" == "1" ]]; then
     exit 1
   fi
+fi
+
+# Optional Mutagen validation (two-way sync) if requested
+if [[ "${REQUIRE_MUTAGEN:-0}" == "1" ]]; then
+  echo "[verify] Running Mutagen validation..."
+  CONFIG_ENV_FILE="${CONFIG_ENV_FILE}" "${SCRIPT_DIR}/verify_mutagen.sh"
 fi
