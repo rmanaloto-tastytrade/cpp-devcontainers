@@ -103,9 +103,9 @@ vcpkg version
   docker buildx bake \
     -f .devcontainer/docker-bake.hcl \
     devcontainer \
-    --set base.tags=dev-base:local \
-    --set devcontainer.tags=devcontainer:local \
-    --set '*.args.BASE_IMAGE'=dev-base:local \
+    --set base.tags=cpp-dev-base:local \
+    --set devcontainer.tags=cpp-devcontainer:local \
+    --set '*.args.BASE_IMAGE'=cpp-dev-base:local \
     --set '*.args.USERNAME'=slotmap --set '*.args.USER_UID'=1000 --set '*.args.USER_GID'=1000 \
     --set '*.args.CLANG_VARIANT'=p2996 \
     --set '*.args.ENABLE_CLANG_P2996'=1 \

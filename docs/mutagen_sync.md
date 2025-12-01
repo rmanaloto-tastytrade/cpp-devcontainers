@@ -34,7 +34,7 @@
      --default-file-mode=0644 \
      --default-directory-mode=0755 \
      ~/dev/github/SlotMap \
-     slotmap-devcontainer:/home/<CONTAINER_USER>/workspace
+     slotmap-cpp-devcontainer:/home/<CONTAINER_USER>/workspace
    ```
 4) Manage the session:
    - `mutagen sync list slotmap-sync`

@@ -171,10 +171,10 @@ if [[ "${VERIFY:-0}" == "1" ]]; then
   fi
   image_tag=""
   case "${targets[0]}" in
-    devcontainer_gcc${GCC_VERSION}_clangp2996) image_tag="devcontainer:gcc${GCC_VERSION}-clangp2996" ;;
-    devcontainer_gcc${GCC_VERSION}_clang_dev) image_tag="devcontainer:gcc${GCC_VERSION}-clang${LLVM_VARIANT}" ;;
-    devcontainer_gcc${GCC_VERSION}_clang_qual) image_tag="devcontainer:gcc${GCC_VERSION}-clang${LLVM_VARIANT}" ;;
-    devcontainer|default) image_tag="${TAG:-devcontainer:local}" ;;
+    devcontainer_gcc${GCC_VERSION}_clangp2996) image_tag="cpp-devcontainer:gcc${GCC_VERSION}-clangp2996" ;;
+    devcontainer_gcc${GCC_VERSION}_clang_dev) image_tag="cpp-devcontainer:gcc${GCC_VERSION}-clang${LLVM_VARIANT}" ;;
+    devcontainer_gcc${GCC_VERSION}_clang_qual) image_tag="cpp-devcontainer:gcc${GCC_VERSION}-clang${LLVM_VARIANT}" ;;
+    devcontainer|default) image_tag="${TAG:-cpp-devcontainer:local}" ;;
   esac
   if [[ -z "$image_tag" ]]; then
     echo "WARNING: Could not infer image tag for target ${targets[0]}; skipping verify." >&2

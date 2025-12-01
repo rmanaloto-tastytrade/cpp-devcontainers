@@ -46,7 +46,7 @@ The container user is supplied via the scripts. By default, `deploy_remote_devco
 
 ## Notes & Options
 - Workspace location: recommended to use a remote checkout to avoid slow SSHFS. Default `workspaceFolder` is `/home/${USER}/workspace` (generic). `workspaceMount` binds the repo into that path; `deploy_remote_devcontainer.sh` defaults the host path to `~/dev/devcontainers/workspace` (override with `--remote-workspace`).
-- Volumes: vcpkg downloads cached via a named volume on the remote (`slotmap-vcpkg`). You can add ccache/sccache volumes similarly.
+- Volumes: caches are consolidated under a single volume (`cppdev-cache`) mounting `/cppdev-cache` in the container (vcpkg downloads + binary cache, ccache/sccache, and a persistent `/tmp`).
 - Multiple hosts/containers: create distinct contexts per host and per-host workspaces to avoid collisions.
 - User identity: set `user.name`/`user.email` inside the container to your desired Git identity.
 - Inbound SSH to the container uses staged public keys from `~/devcontainers/ssh_keys`; outbound SSH/Git uses the mounted keys. Post-deploy, the remote script attempts an SSH login to port 2222 using `id_ed25519` from the synced key cache; if that fails, treat the deploy as suspect and investigate keys/port mapping.

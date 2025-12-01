@@ -9,7 +9,7 @@ set -euo pipefail
 # Usage:
 #   CONFIG_ENV_FILE=config/env/devcontainer.env scripts/verify_devcontainer.sh [--image <tag>] [--ssh-port <port>] [--require-ssh]
 # Defaults:
-#   --image devcontainer:gcc15-clangp2996
+#   --image cpp-devcontainer:gcc15-clangp2996
 #   --ssh-port ${DEVCONTAINER_SSH_PORT:-9222}
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -26,7 +26,7 @@ if [[ -f "$CLANG_UTILS_PATH" ]]; then
   resolve_clang_branch
 fi
 
-IMAGE_TAG="${DEVCONTAINER_IMAGE:-devcontainer:gcc15-clangp2996}"
+IMAGE_TAG="${DEVCONTAINER_IMAGE:-cpp-devcontainer:gcc15-clangp2996}"
 SSH_PORT="${DEVCONTAINER_SSH_PORT:-9222}"
 PATH_PREFIX="/usr/local/bin:/opt/clang-p2996/bin:/opt/gcc-15/bin"
 
@@ -44,7 +44,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       cat <<EOF
 Usage: $0 [--image <tag>] [--ssh-port <port>] [--require-ssh]
-Defaults: --image devcontainer:gcc15-clangp2996, --ssh-port ${SSH_PORT}
+Defaults: --image cpp-devcontainer:gcc15-clangp2996, --ssh-port ${SSH_PORT}
 EOF
       exit 0
       ;;

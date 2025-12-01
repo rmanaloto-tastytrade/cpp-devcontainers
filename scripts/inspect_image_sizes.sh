@@ -3,11 +3,11 @@ set -euo pipefail
 
 # Prints sizes for common devcontainer images.
 # Usage: scripts/inspect_image_sizes.sh [tag1 tag2 ...]
-# Defaults: devcontainer:local dev-base:local tools_merge:local
+# Defaults: cpp-devcontainer:local cpp-dev-base:local tools_merge:local
 
 IMAGES=("$@")
 if [[ ${#IMAGES[@]} -eq 0 ]]; then
-  IMAGES=(devcontainer:local dev-base:local tools_merge:local)
+  IMAGES=(cpp-devcontainer:local cpp-dev-base:local tools_merge:local)
 fi
 
 echo "Image size report:"

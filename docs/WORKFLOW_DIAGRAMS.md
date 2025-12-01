@@ -151,7 +151,7 @@ sequenceDiagram
     Note over RunScript,Docker: Build Base Image (if needed)
     RunScript->>Docker: docker buildx bake base
     Docker->>Docker: Build Ubuntu 24.04 + tools
-    Docker-->>RunScript: dev-base:local ready
+    Docker-->>RunScript: cpp-dev-base:local ready
 
     Note over RunScript,Docker: Build Tool Stages (Parallel)
     RunScript->>Docker: docker buildx bake tools
@@ -178,7 +178,7 @@ sequenceDiagram
 
     RunScript->>Docker: docker buildx bake devcontainer
     Docker->>Docker: Merge all tool stages
-    Docker-->>RunScript: devcontainer:local ready
+    Docker-->>RunScript: cpp-devcontainer:local ready
 
     Note over RunScript,Container: Start Container
     RunScript->>Docker: devcontainer up --workspace-folder ...
@@ -678,14 +678,14 @@ graph TB
     end
 
     subgraph "Docker Volume Management"
-        D[Volume: slotmap-vcpkg]
+        D[Volume: cppdev-cache]
         E[Docker Managed Storage<br/>/var/lib/docker/volumes/]
     end
 
     subgraph "Container Filesystem"
         F[/home/rmanaloto/workspace<br/>(Bind Mount)]
         G[/home/rmanaloto/.ssh<br/>(Bind Mount ⚠️)]
-        H[/opt/vcpkg/downloads<br/>(Volume Mount)]
+        H[/cppdev-cache<br/>(Volume Mount: vcpkg downloads/binary cache, ccache/sccache, tmp)]
         I[/ (Container Root)<br/>Overlay Filesystem]
     end
 

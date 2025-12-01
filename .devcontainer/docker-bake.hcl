@@ -1,9 +1,9 @@
 variable "TAG" {
-  default = "devcontainer:local"
+  default = "cpp-cpp-devcontainer:local"
 }
 
 variable "BASE_TAG" {
-  default = "dev-base:local"
+  default = "cpp-cpp-dev-base:local"
 }
 
 variable "PLATFORM" {
@@ -235,7 +235,7 @@ target "devcontainer_gcc14_clang_qual" {
   inherits  = ["_base"]
   target    = "devcontainer"
   dependsOn = ["tools_merge"]
-  tags      = ["devcontainer:gcc14-clang${CLANG_QUAL}"]
+  tags      = ["cpp-cpp-devcontainer:gcc14-clang${CLANG_QUAL}"]
   args = {
     GCC_VERSION        = "14"
     CLANG_VARIANT      = "${CLANG_QUAL}"
@@ -249,7 +249,7 @@ target "devcontainer_gcc14_clang_dev" {
   inherits  = ["_base"]
   target    = "devcontainer"
   dependsOn = ["tools_merge"]
-  tags      = ["devcontainer:gcc14-clang${CLANG_DEV}"]
+  tags      = ["cpp-cpp-devcontainer:gcc14-clang${CLANG_DEV}"]
   args = {
     GCC_VERSION        = "14"
     CLANG_VARIANT      = "${CLANG_DEV}"
@@ -263,7 +263,7 @@ target "devcontainer_gcc14_clangp2996" {
   inherits  = ["_base"]
   target    = "devcontainer"
   dependsOn = ["tools_merge"]
-  tags      = ["devcontainer:gcc14-clangp2996"]
+  tags      = ["cpp-cpp-devcontainer:gcc14-clangp2996"]
   args = {
     GCC_VERSION        = "14"
     CLANG_VARIANT      = "p2996"
@@ -277,7 +277,7 @@ target "devcontainer_gcc15_clang_qual" {
   inherits  = ["_base"]
   target    = "devcontainer"
   dependsOn = ["tools_merge"]
-  tags      = ["devcontainer:gcc15-clang${CLANG_QUAL}"]
+  tags      = ["cpp-cpp-devcontainer:gcc15-clang${CLANG_QUAL}"]
   args = {
     GCC_VERSION        = "15"
     CLANG_VARIANT      = "${CLANG_QUAL}"
@@ -291,7 +291,7 @@ target "devcontainer_gcc15_clang_dev" {
   inherits  = ["_base"]
   target    = "devcontainer"
   dependsOn = ["tools_merge"]
-  tags      = ["devcontainer:gcc15-clang${CLANG_DEV}"]
+  tags      = ["cpp-cpp-devcontainer:gcc15-clang${CLANG_DEV}"]
   args = {
     GCC_VERSION        = "15"
     CLANG_VARIANT      = "${CLANG_DEV}"
@@ -305,7 +305,7 @@ target "devcontainer_gcc15_clangp2996" {
   inherits  = ["_base"]
   target    = "devcontainer"
   dependsOn = ["tools_merge"]
-  tags      = ["devcontainer:gcc15-clangp2996"]
+  tags      = ["cpp-cpp-devcontainer:gcc15-clangp2996"]
   args = {
     GCC_VERSION        = "15"
     CLANG_VARIANT      = "p2996"

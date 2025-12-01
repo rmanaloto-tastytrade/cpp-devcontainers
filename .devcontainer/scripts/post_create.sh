@@ -4,7 +4,7 @@ set -euo pipefail
 CURRENT_USER="${DEVCONTAINER_USER:-$(id -un)}"
 CURRENT_GROUP="$(id -gn "$CURRENT_USER" 2>/dev/null || id -gn)"
 WORKSPACE_DIR="${WORKSPACE_FOLDER:-/home/${CURRENT_USER}/workspace}"
-CACHE_ROOT="/slotmap-cache"
+CACHE_ROOT="/cppdev-cache"
 CCACHE_DIR="${CCACHE_DIR:-${CACHE_ROOT}/ccache}"
 SCCACHE_DIR="${SCCACHE_DIR:-${CACHE_ROOT}/sccache}"
 VCPKG_DOWNLOADS="${VCPKG_DOWNLOADS:-${CACHE_ROOT}/vcpkg-downloads}"
@@ -77,7 +77,7 @@ fi
 # See: https://docs.github.com/en/authentication/troubleshooting-ssh/using-ssh-over-the-https-port
 {
   echo ""
-  echo "# Added by post_create.sh for devcontainer: use GitHub SSH over 443"
+  echo "# Added by post_create.sh for cpp-devcontainer: use GitHub SSH over 443"
   echo "Host github.com"
   echo "  Hostname ssh.github.com"
   echo "  Port 443"

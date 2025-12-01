@@ -2,7 +2,7 @@
 Fast on-boarding for AI agents (Claude/Code, Codex CLI) to build, run, and validate SlotMap devcontainers on the remote Docker host.
 
 ## What we build
-- Matrix images come from `.devcontainer/docker-bake.hcl` and follow the tags `devcontainer:gcc{14|15}-clang{21|22|p2996}` plus `devcontainer:local` (default clang-p2996/gcc15).
+- Matrix images come from `.devcontainer/docker-bake.hcl` and follow the tags `cpp-devcontainer:gcc{14|15}-clang{21|22|p2996}` plus `cpp-devcontainer:local` (default clang-p2996/gcc15).
 - Toolchain layout: everything manually installed lives under `/usr/local` inside the final image (gcc builds symlinked there, clang installs from apt.llvm.org pockets, p2996 staged under `/usr/local/clang-p2996`).
 - Branch→version mapping is centralized in `scripts/clang_branch_utils.sh`:
   - `stable→20`, `qualification→21`, `development→22`, numeric passthrough.
@@ -22,7 +22,7 @@ Fast on-boarding for AI agents (Claude/Code, Codex CLI) to build, run, and valid
   CONFIG_ENV_FILE=config/env/devcontainer.gcc15-clang22.env \
   docker buildx bake -f .devcontainer/docker-bake.hcl devcontainer_gcc15_clang22
   ```
-- Full matrix is available: `devcontainer:gcc14-clang21`, `gcc14-clang22`, `gcc14-clangp2996`, `gcc15-clang21`, `gcc15-clang22`, `gcc15-clangp2996`, plus `devcontainer:local`.
+- Full matrix is available: `cpp-devcontainer:gcc14-clang21`, `gcc14-clang22`, `gcc14-clangp2996`, `gcc15-clang21`, `gcc15-clang22`, `gcc15-clangp2996`, plus `cpp-devcontainer:local`.
 
 ## Running the devcontainers
 - Run on the remote host (preferred): `scripts/run_local_devcontainer.sh` (invoked via SSH by `scripts/deploy_remote_devcontainer.sh`). It rsyncs the repo into a sandbox, optionally bakes, then runs `devcontainer up` with `127.0.0.1:<port>→2222`.
@@ -75,7 +75,7 @@ Fast on-boarding for AI agents (Claude/Code, Codex CLI) to build, run, and valid
 
 ## Current state (validated)
 - All permutations are built on `c24s1.ch2` and running:  
-  `devcontainer:local` (9222), `gcc14-clang21` (9223), `gcc14-clang22` (9227), `gcc14-clangp2996` (9228), `gcc15-clang21` (9225), `gcc15-clang22` (9226), `gcc15-clangp2996` (9224).
+  `cpp-devcontainer:local` (9222), `gcc14-clang21` (9223), `gcc14-clang22` (9227), `gcc14-clangp2996` (9228), `gcc15-clang21` (9225), `gcc15-clang22` (9226), `gcc15-clangp2996` (9224).
 - Verification shows expected compiler/tool versions in both image and running containers; clang22 now installs from the development pocket without 404s.
 
 ## Pointers to other docs

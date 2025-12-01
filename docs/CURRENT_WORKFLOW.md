@@ -38,7 +38,7 @@
 └───────────────────────────┬──────────────────────────────────────────┘
                             │ devcontainer up
 ┌───────────────────────────▼──────────────────────────────────────────┐
-│                     Container: devcontainer:local                   │
+│                     Container: cpp-devcontainer:local                   │
 │  - /home/rmanaloto/workspace (bind mount)                           │
 │  - /tmp/ssh-agent.socket (bind of host agent)                       │
 │  - ~/.ssh/authorized_keys from staged *.pub files                   │
@@ -66,7 +66,7 @@ Access pattern: host port 9222 is bound to 127.0.0.1; reach it via SSH tunnel or
   - Recreates the sandbox at `~/dev/devcontainers/SlotMap` and workspace source at `~/dev/devcontainers/workspace` from the canonical repo (`~/dev/github/SlotMap`).
   - Stages `KEY_CACHE/*.pub` into `.devcontainer/ssh` in both sandbox and workspace; no private keys are copied.
   - Validates `.devcontainer/docker-bake.hcl` and `devcontainer.json`; installs devcontainer CLI `0.80.2` if needed.
-  - Bakes `dev-base:local` if missing, then bakes the requested image (default `devcontainer:local`; override via env per permutation) with user/uid/gid args.
+  - Bakes `cpp-dev-base:local` if missing, then bakes the requested image (default `cpp-devcontainer:local`; override via env per permutation) with user/uid/gid args.
   - Runs `devcontainer up` with exports:
     - `REMOTE_WORKSPACE_PATH=/home/<user>/dev/devcontainers/workspace`
     - `SSH_AUTH_SOCK` from the host (bind-mounted to `/tmp/ssh-agent.socket`)

@@ -3,7 +3,7 @@
 This page documents the planned multi-stage Dockerfile + `docker-bake.hcl` layout so we can review the flow before refactoring.
 
 ### Stages and responsibilities
-- `base`: Ubuntu 24.04 with core OS/toolchain packages through `binutils+gdb` (includes Linux perf tooling, CMake, Ninja, Make, GCC, LLVM 21). Built/tagged once (e.g., `dev-base:local`) and reused by all other stages via `BASE_IMAGE`.
+- `base`: Ubuntu 24.04 with core OS/toolchain packages through `binutils+gdb` (includes Linux perf tooling, CMake, Ninja, Make, GCC, LLVM 21). Built/tagged once (e.g., `cpp-dev-base:local`) and reused by all other stages via `BASE_IMAGE`.
 - Parallel builders (all `FROM base`) that install into staging prefixes for clean copying:
   - `clang_p2996` (Bloomberg compiler)
   - `node_mermaid` (Node.js tarball + `@mermaid-js/mermaid-cli`)
@@ -12,7 +12,7 @@ This page documents the planned multi-stage Dockerfile + `docker-bake.hcl` layou
   - `python_tools` (uv, ruff, ty), `pixi`
   - `iwyu`, `mrdocs`
 - `tools_merge`: `FROM base`; copies artifacts from all builder stages into `/usr/local` (and any required `/opt` prefixes), then bootstraps vcpkg and links `vcpkg` into `/usr/local/bin`.
-- `devcontainer`: `FROM tools_merge`; creates the dev user, sets ownership, integrates vcpkg shells, and sets final env vars (CMD handled by devcontainer features instead of `sleep infinity`). Devcontainers should reference the baked image (e.g., `devcontainer:local`) in `devcontainer.json`.
+- `devcontainer`: `FROM tools_merge`; creates the dev user, sets ownership, integrates vcpkg shells, and sets final env vars (CMD handled by devcontainer features instead of `sleep infinity`). Devcontainers should reference the baked image (e.g., `cpp-devcontainer:local`) in `devcontainer.json`.
 
 ### Workflow diagram
 ```mermaid
@@ -61,7 +61,7 @@ flowchart TB
 - `base`: builds the base image once; intended to be cached/reused to avoid rebuilds.
 - `<builder>` targets for each parallel stage, plus a `tools` group target that depends on all builders.
 - `tools_merge`: depends on `tools` (and runs vcpkg bootstrap).
-- `devcontainer` (default): depends on `tools_merge`; final image for VS Code/CLion devcontainer. Devcontainers should reference this baked image via `image: devcontainer:local` in `devcontainer.json`, not rebuild locally.
+- `devcontainer` (default): depends on `tools_merge`; final image for VS Code/CLion devcontainer. Devcontainers should reference this baked image via `image: cpp-devcontainer:local` in `devcontainer.json`, not rebuild locally.
 
 ### Caching & speedups
 - Bake injects BuildKit cache import/export (`.docker/cache`) for all targets; run `docker buildx bake base` once to warm it, and subsequent `bake devcontainer` reuses layers.

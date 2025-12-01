@@ -29,7 +29,7 @@ remote_host:
   ssh_keys_cache: "~/.ssh"     # public keys only; private keys stay on host agent
 
 container:
-  image_name: "devcontainer:<permutation>"   # default: local (gcc15+clang-p2996)
+  image_name: "cpp-devcontainer:<permutation>"   # default: local (gcc15+clang-p2996)
   user: "<remote_user>"
   workspace: "/home/<remote_user>/workspace"
   ssh_port_container: 2222

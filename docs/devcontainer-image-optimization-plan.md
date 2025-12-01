@@ -3,10 +3,10 @@
 **Scope:** Keep the current Bake pipeline (base → tools_merge → devcontainer), retain `devcontainer.json` runtime settings, and improve size/rebuild speed without changing runtime behavior.
 
 ## Current build artifacts (Bake)
-- `base` (`dev-base:local`): Ubuntu 24.04 + core deps, toolchain repos, GCC-${GCC_VERSION} (currently 14), LLVM/clang-21 from llvm.sh, binutils+gdb.
+- `base` (`cpp-dev-base:local`): Ubuntu 24.04 + core deps, toolchain repos, GCC-${GCC_VERSION} (currently 14), LLVM/clang-21 from llvm.sh, binutils+gdb.
 - Parallel tool stages (15): clang_p2996, node_mermaid, mold, gh_cli, ccache, sccache, ripgrep, cppcheck, valgrind, python_tools, pixi, iwyu, mrdocs, jq, awscli.
 - `tools_merge`: merges staged tool outputs.
-- `devcontainer` (`devcontainer:local`): final image with user/uid/gid, mounts, agent socket, sshd feature.
+- `devcontainer` (`cpp-devcontainer:local`): final image with user/uid/gid, mounts, agent socket, sshd feature.
 
 ## Observations
 - GCC: only GCC-${GCC_VERSION} (14) is installed; no GCC-13 present. No action needed to remove GCC-13, but keep a periodic check to avoid drift.
@@ -27,11 +27,11 @@
    - Document a “version bump checklist” (llvm.sh `LLVM_VERSION`, Node/mermaid, mold, gh_cli, jq, pixi, awscli, clang_p2996 branch) so upgrades are deliberate and tested.
    - Keep version args centralized in `docker-bake.hcl`; add a small `scripts/check_tool_versions.sh` to diff a manifest vs Dockerfile args before bumping.
 5) **Cache and rebuild speed**
-   - Keep `dev-base:local` cached; consider publishing/pulling it when working across hosts.
+   - Keep `cpp-dev-base:local` cached; consider publishing/pulling it when working across hosts.
    - Use per-target rebuilds for updates: `docker buildx bake <tool>` then `docker buildx bake devcontainer`.
    - Maintain vcpkg cache volume; optionally add ccache/sccache volumes for iterative builds.
 6) **Image inspection**
-   - Add a `scripts/inspect_image_sizes.sh` to report layer sizes for `dev-base:local` and `devcontainer:local` to track progress without changing builds.
+   - Add a `scripts/inspect_image_sizes.sh` to report layer sizes for `cpp-dev-base:local` and `cpp-devcontainer:local` to track progress without changing builds.
 
 ## Next steps (if approved)
 - Implement optional tool toggles and “slim” bake group (defaults unchanged).
