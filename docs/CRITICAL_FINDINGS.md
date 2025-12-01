@@ -642,7 +642,7 @@ SSH_AUTH_SOCK=~/.ssh/agent.sock ssh-add -l
 **Add AFTER line 22:**
 ```json
 "mounts": [
-  "source=slotmap-vcpkg,target=/opt/vcpkg/downloads,type=volume",
+  "source=cppdev-cache,target=/cppdev-cache,type=volume",
   "source=${localEnv:REMOTE_SSH_SYNC_DIR},target=/home/${env:DEVCONTAINER_USER}/.ssh,type=bind,consistency=cached",
   // ADD THIS:
   "source=/home/rmanaloto/.ssh/agent.sock,target=/tmp/ssh-agent.socket,type=bind"

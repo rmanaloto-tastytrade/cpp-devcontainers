@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Prepares host-side Mutagen SSH configuration for a given devcontainer env.
-# - Writes ~/.mutagen/slotmap_ssh_config with ProxyJump to the remote host and port from CONFIG_ENV_FILE.
+# - Writes ~/.mutagen/cpp-devcontainer_ssh_config with ProxyJump to the remote host and port from CONFIG_ENV_FILE.
 # - Writes ~/.mutagen.yml (defaults only) and an ssh/scp wrapper under ~/.mutagen/bin that injects that config.
 # - Restarts the Mutagen daemon with MUTAGEN_SSH_PATH pointing at the wrapper dir so Mutagen uses the config.
 #
@@ -22,9 +22,9 @@ REMOTE_HOST=${DEVCONTAINER_REMOTE_HOST:-}
 REMOTE_USER=${DEVCONTAINER_REMOTE_USER:-$USER}
 SSH_PORT=${DEVCONTAINER_SSH_PORT:-9222}
 SSH_KEY=${DEVCONTAINER_SSH_KEY:-"$HOME/.ssh/id_ed25519"}
-CONTAINER_USER=${CONTAINER_USER:-slotmap}
+CONTAINER_USER=${CONTAINER_USER:-${DEVCONTAINER_REMOTE_USER:-${USER}}}
 CONTAINER_WORKSPACE=${CONTAINER_WORKSPACE:-"/home/${CONTAINER_USER}/workspace"}
-SSH_ALIAS=${MUTAGEN_SSH_ALIAS:-slotmap-mutagen}
+SSH_ALIAS=${MUTAGEN_SSH_ALIAS:-cpp-devcontainer-mutagen}
 PROXY_HOST=${MUTAGEN_PROXY_HOST:-${REMOTE_HOST}}
 # Append a domain suffix if not already ending with it (user can override/disable)
 DOMAIN_SUFFIX=${MUTAGEN_DOMAIN_SUFFIX:-"tastyworks.com"}
@@ -36,7 +36,7 @@ fi
 [[ -f "$SSH_KEY" ]] || { echo "ERROR: SSH key not found: $SSH_KEY" >&2; exit 1; }
 
 MUT_DIR="$HOME/.mutagen"
-SSH_CFG="$MUT_DIR/slotmap_ssh_config"
+SSH_CFG="$MUT_DIR/cpp-devcontainer_ssh_config"
 YML="$HOME/.mutagen.yml"
 SSH_BIN="$(command -v ssh)"
 WRAP_DIR="$MUT_DIR/bin"

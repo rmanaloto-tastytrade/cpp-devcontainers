@@ -17,7 +17,7 @@
 1) Ensure the devcontainer is running and exposes sshd on loopback: `127.0.0.1:<port> -> container:2222` (as configured in `devcontainer.json`).
 2) Add an SSH config entry that ProxyJumps through the remote host to the container:
    ```sshconfig
-   Host slotmap-devcontainer
+   Host cpp-devcontainer
        HostName 127.0.0.1
        Port <DEVCONTAINER_SSH_PORT>
        User <CONTAINER_USER>
@@ -28,18 +28,18 @@
 3) Start a Mutagen session from macOS pointing to the container via SSH:
    ```bash
    mutagen sync create \
-     --name slotmap-sync \
+    --name cpp-devcontainer-sync \
      --ignore-vcs \
      --symlink-mode=posix-raw \
      --default-file-mode=0644 \
      --default-directory-mode=0755 \
      ~/dev/github/SlotMap \
-     slotmap-cpp-devcontainer:/home/<CONTAINER_USER>/workspace
+    cpp-devcontainer:/home/<CONTAINER_USER>/workspace
    ```
 4) Manage the session:
-   - `mutagen sync list slotmap-sync`
-   - `mutagen sync pause/resume slotmap-sync`
-   - `mutagen sync terminate slotmap-sync`
+  - `mutagen sync list cpp-devcontainer-sync`
+  - `mutagen sync pause/resume cpp-devcontainer-sync`
+  - `mutagen sync terminate cpp-devcontainer-sync`
 
 ## Mutagen Availability in the Devcontainer
 - The devcontainer image now installs `eget v1.3.4` and `mutagen v0.18.1` at build time (via GitHub releases) into `/usr/local/bin` (`mutagen` and `mutagen-agent`).

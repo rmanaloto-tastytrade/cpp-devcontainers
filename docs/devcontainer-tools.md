@@ -6,7 +6,7 @@ This document captures the contents of `.devcontainer/Dockerfile`, similar in sp
 | Item | Details |
 | --- | --- |
 | Base | `ubuntu:24.04` |
-| Dev user | `USERNAME` build arg (defaults to `slotmap`; we typically set to the remote host user) with passwordless sudo |
+| Dev user | `USERNAME` build arg (defaults to a neutral user; typically set to the remote host user) with passwordless sudo |
 | Shells | bash + zsh (Oh-My-Zsh not installed) |
 | Timezone | `UTC` |
 
@@ -106,7 +106,7 @@ vcpkg version
     --set base.tags=cpp-dev-base:local \
     --set devcontainer.tags=cpp-devcontainer:local \
     --set '*.args.BASE_IMAGE'=cpp-dev-base:local \
-    --set '*.args.USERNAME'=slotmap --set '*.args.USER_UID'=1000 --set '*.args.USER_GID'=1000 \
+    --set '*.args.USERNAME'=${DEV_USER:-rmanaloto} --set '*.args.USER_UID'=1000 --set '*.args.USER_GID'=1000 \
     --set '*.args.CLANG_VARIANT'=p2996 \
     --set '*.args.ENABLE_CLANG_P2996'=1 \
     --set '*.args.GCC_VERSION'=15 \

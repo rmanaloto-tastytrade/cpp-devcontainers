@@ -96,12 +96,12 @@ DOCKER_CONTEXT=${DOCKER_CONTEXT:-${DEVCONTAINER_DOCKER_CONTEXT:-""}}
 SSH_SYNC_SOURCE=${SSH_SYNC_SOURCE:-"$HOME/.ssh/"}
 REMOTE_SSH_SYNC_DIR=${REMOTE_SSH_SYNC_DIR:-""}
 
-CONFIG_REMOTE_USER="$(git config --get slotmap.remoteUser || true)"
+CONFIG_REMOTE_USER="$(git config --get cppdev.remoteUser || true)"
 if [[ -z "$REMOTE_USER" ]]; then
   if [[ -n "$CONFIG_REMOTE_USER" ]]; then
     REMOTE_USER="$CONFIG_REMOTE_USER"
   elif [[ "$LOCAL_USER" == *"@"* ]]; then
-    die "Remote user is required (pass --remote-user or run 'git config slotmap.remoteUser <username>')"
+    die "Remote user is required (pass --remote-user or run 'git config cppdev.remoteUser <username>')"
   else
     REMOTE_USER="$LOCAL_USER"
   fi

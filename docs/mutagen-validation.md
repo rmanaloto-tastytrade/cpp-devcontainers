@@ -74,14 +74,14 @@ This will:
   - Datanovia tutorial series: reiterates two-way-resolved mode, flushing, and conflict handling.
 
 ## Action items for this repo
-- Add `~/.mutagen.yml` pointing to a controlled ssh command (`ssh -F ~/.mutagen/slotmap_ssh_config`), and keep the cfg minimal (Host slotmap-mutagen with ProxyJump baked in). Host-side helper: `scripts/setup_mutagen_host.sh`.
+- Add `~/.mutagen.yml` pointing to a controlled ssh command (`ssh -F ~/.mutagen/cpp-devcontainer_ssh_config`), and keep the cfg minimal (Host cpp-devcontainer-mutagen with ProxyJump baked in). Host-side helper: `scripts/setup_mutagen_host.sh`.
 - Run `mutagen daemon run` or restart after config changes to confirm host/argv are correct (logging wrapper optional).
 - After fixing the ssh command construction, re-enable automated validation (`REQUIRE_MUTAGEN=1`) in `verify_devcontainer.sh` for all permutations.
 
 ## What we already tried (chronological)
 - Local tunnel approach (deprecated): opened local port to devcontainer, used `ssh://127.0.0.1:<port>`; Mutagen still launched agent with host `ssh`.
 - Host-side config approach (current):
-  - `scripts/setup_mutagen_host.sh` writes `~/.mutagen/slotmap_ssh_config` (ProxyJump to remote host, key, port) and minimal `~/.mutagen.yml`.
+  - `scripts/setup_mutagen_host.sh` writes `~/.mutagen/cpp-devcontainer_ssh_config` (ProxyJump to remote host, key, port) and minimal `~/.mutagen.yml`.
   - `scripts/verify_mutagen.sh` uses a logging ssh wrapper and scp-style endpoint (`user@127.0.0.1:/path`).
   - Result: agent launch still logs host `ssh`; subsequent commands (cleanup) use the correct host.
 - Minimal local test: `mutagen sync create /tmp/foo ssh://localhost/tmp` and `mutagen sync create /tmp/foo localhost:/tmp` both fail with host `ssh`.

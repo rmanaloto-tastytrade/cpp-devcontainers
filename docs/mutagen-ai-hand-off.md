@@ -14,7 +14,7 @@
 
 ## What’s implemented
 - Host setup: `scripts/setup_mutagen_host.sh`
-  - Writes `~/.mutagen/slotmap_ssh_config` (ProxyJump, key, port) and minimal `~/.mutagen.yml`; restarts daemon.
+  - Writes `~/.mutagen/cpp-devcontainer_ssh_config` (ProxyJump, key, port) and minimal `~/.mutagen.yml`; restarts daemon.
 - Validation: `scripts/verify_mutagen.sh`
   - Uses scp-style endpoint (`user@127.0.0.1:/path`), logging ssh wrapper (`/tmp/mutagen_ssh_invocations.log`), probes a temp dir, flushes, verifies both directions.
 - Devcontainer verify hook: `scripts/verify_devcontainer.sh` runs Mutagen check when `REQUIRE_MUTAGEN=1`.
@@ -22,7 +22,7 @@
 
 ## Repros
 1) Host SSH works:
-   - `ssh -F ~/.mutagen/slotmap_ssh_config slotmap-mutagen 'echo ok'` ✅
+   - `ssh -F ~/.mutagen/cpp-devcontainer_ssh_config cpp-devcontainer-mutagen 'echo ok'` ✅
 2) Mutagen fails:
    - `CONFIG_ENV_FILE=config/env/devcontainer.c090s4.gcc14-clang21.env REQUIRE_MUTAGEN=1 scripts/verify_devcontainer.sh --require-ssh`
    - Error: `ssh: Could not resolve hostname ssh: nodename nor servname provided`

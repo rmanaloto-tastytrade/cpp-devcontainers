@@ -293,13 +293,13 @@ git revert HEAD  # Reverts to using private key directly
 ```json
 // Before (current - line 22):
 "mounts": [
-  "source=slotmap-vcpkg,target=/opt/vcpkg/downloads,type=volume",
+  "source=cppdev-cache,target=/cppdev-cache,type=volume",
   "source=${localEnv:REMOTE_SSH_SYNC_DIR},target=/home/${env:DEVCONTAINER_USER}/.ssh,type=bind,consistency=cached"
 ],
 
 // After (proposed):
 "mounts": [
-  "source=slotmap-vcpkg,target=/opt/vcpkg/downloads,type=volume"
+  "source=cppdev-cache,target=/cppdev-cache,type=volume"
   // SSH keys mount REMOVED - using agent forwarding instead
   // If you need the mount for some reason, uncomment below:
   // "source=${localEnv:REMOTE_SSH_SYNC_DIR},target=/home/${env:DEVCONTAINER_USER}/.ssh-backup,type=bind,consistency=cached"
