@@ -164,6 +164,7 @@ echo "[verify] Attempting SSH tool check on ${REMOTE_HOST}:${SSH_PORT} (direct, 
 SSH_ERR_LOG="/tmp/verify_ssh_err.log"
 SSH_CMD_PROXY=(ssh -i "${SSH_KEY_PATH}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -J "${REMOTE_USER}@${REMOTE_HOST}" -p "${SSH_PORT}" "${CONTAINER_SSH_USER}@127.0.0.1")
 SSH_CMD_DIRECT=(ssh -i "${SSH_KEY_PATH}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -p "${SSH_PORT}" "${CONTAINER_SSH_USER}@${REMOTE_HOST}")
+SSH_CMD_LOCALHOST=(ssh -i "${SSH_KEY_PATH}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -p "${SSH_PORT}" "${CONTAINER_SSH_USER}@127.0.0.1")
 SSH_TARGET_CMD=$(cat <<EOF
 cat <<'EOS' >/tmp/verify_devcontainer.sh
 ${CHECK_SCRIPT}
@@ -183,6 +184,12 @@ else
   if "${SSH_CMD_PROXY[@]}" "${SSH_TARGET_CMD}" 2>"${SSH_ERR_LOG}.proxy"; then
     SSH_OK=1
     mv "${SSH_ERR_LOG}.proxy" "${SSH_ERR_LOG}" 2>/dev/null || true
+  elif [[ "${REMOTE_HOST}" != "127.0.0.1" && "${REMOTE_HOST}" != "localhost" ]]; then
+    echo "[verify] ProxyJump failed; retrying direct localhost connection..." >&2
+    if "${SSH_CMD_LOCALHOST[@]}" "${SSH_TARGET_CMD}" 2>"${SSH_ERR_LOG}.localhost"; then
+      SSH_OK=1
+      mv "${SSH_ERR_LOG}.localhost" "${SSH_ERR_LOG}" 2>/dev/null || true
+    fi
   fi
 fi
 
