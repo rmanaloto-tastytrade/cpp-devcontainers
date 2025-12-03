@@ -1,0 +1,5 @@
+SlotMap is header-only. To use:
+
+    #include <slotmap/slotmap.h>
+
+No link libraries are required.

@@ -1,0 +1,7 @@
+{
+  "name": "slot-map",
+  "version-string": "0.1.0",
+  "description": "Header-only SlotMap container",
+  "homepage": "https://github.com/SergeyMakeev/SlotMap",
+  "license": "MIT"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "cpp-baremetal-senders-and-receivers",
+  "version-date": "2025-12-01",
+  "description": "Intel C++ Baremetal Async - Header-only senders/receivers async framework",
+  "homepage": "https://github.com/intel/cpp-baremetal-senders-and-receivers",
+  "license": "BSL-1.0",
+  "supports": "!uwp",
+  "dependencies": [
+    "cpp-baremetal-concurrency",
+    "cpp-std-extensions",
+    "boost-mp11"
+  ]
+}

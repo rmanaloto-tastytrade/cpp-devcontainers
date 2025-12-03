@@ -1,0 +1,8 @@
+{
+  "name": "cpp-baremetal-concurrency",
+  "version-date": "2025-12-01",
+  "description": "Intel C++ Baremetal Concurrency - Header-only low-level concurrency primitives",
+  "homepage": "https://github.com/intel/cpp-baremetal-concurrency",
+  "license": "BSL-1.0",
+  "supports": "!uwp"
+}

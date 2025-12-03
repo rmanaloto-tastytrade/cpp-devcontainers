@@ -1,9 +1,10 @@
 {
-  "name": "bext-ut",
-  "version": "2.3.1",
-  "description": "C++20 μ(micro)/Unit Testing Framework - single header/single module, macro-free testing",
+  "name": "boost-ut",
+  "version-date": "2025-01-26",
+  "description": "C++20 μ(micro)/Unit Testing framework",
   "homepage": "https://github.com/boost-ext/ut",
   "license": "BSL-1.0",
+  "supports": "!uwp",
   "dependencies": [
     {
       "name": "vcpkg-cmake",

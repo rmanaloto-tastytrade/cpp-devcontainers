@@ -1,0 +1,8 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "qlibs-perf",
+  "version": "0.1.0",
+  "description": "qlibs/perf - C++2x performance library (header-only)",
+  "homepage": "https://github.com/qlibs/perf",
+  "license": "MIT"
+}

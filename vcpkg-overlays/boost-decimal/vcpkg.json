@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "boost-decimal",
+  "version": "1.0.0",
+  "description": "C++14 implementation of IEEE 754 Decimal Floating Point numbers from C++ Alliance",
+  "homepage": "https://github.com/cppalliance/decimal",
+  "license": "BSL-1.0",
+  "supports": "!(uwp|arm)"
+}

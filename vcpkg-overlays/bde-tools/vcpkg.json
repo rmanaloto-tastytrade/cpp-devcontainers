@@ -1,0 +1,7 @@
+{
+  "name": "bde-tools",
+  "version-date": "2025-11-27",
+  "description": "Tools for developing and building libraries modeled on BDE",
+  "homepage": "https://github.com/bloomberg/bde-tools",
+  "license": "Apache-2.0"
+}

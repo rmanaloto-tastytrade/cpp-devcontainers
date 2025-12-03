@@ -1,0 +1,15 @@
+{
+  "name": "compile-time-init-build",
+  "version-date": "2025-12-01",
+  "description": "Intel Compile-Time Init Build (CIB) - Header-only C++ library for composing modular firmware at compile-time with logging support",
+  "homepage": "https://github.com/intel/compile-time-init-build",
+  "license": "BSL-1.0",
+  "supports": "!uwp",
+  "dependencies": [
+    "boost-mp11",
+    "fmt",
+    "cpp-baremetal-concurrency",
+    "cpp-std-extensions",
+    "cpp-baremetal-senders-and-receivers"
+  ]
+}
