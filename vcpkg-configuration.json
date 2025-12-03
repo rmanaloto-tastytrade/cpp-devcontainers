@@ -5,9 +5,6 @@
     "baseline": "80d025e8299d442c13b29751fc9451711b7c6c8e"
   },
   "overlay-ports": [
-    "vcpkg-overlays/cib/ports",
-    "vcpkg-overlays/stdx/ports",
-    "vcpkg-overlays/qlibs/ports",
-    "vcpkg-overlays/boost-ext/ports"
+    "vcpkg-overlays"
   ]
 }
