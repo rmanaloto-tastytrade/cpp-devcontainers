@@ -256,5 +256,19 @@
       "configurePreset": "gcc15-release",
       "output": { "outputOnFailure": true }
     }
+  ],
+  "workflowPresets": [
+    {
+      "name": "clang21-asan-workflow",
+      "configurePreset": "clang21-asan",
+      "buildPreset": "clang21-asan",
+      "testPreset": "clang21-asan"
+    },
+    {
+      "name": "clang21-ubsan-workflow",
+      "configurePreset": "clang21-ubsan",
+      "buildPreset": "clang21-ubsan",
+      "testPreset": "clang21-ubsan"
+    }
   ]
 }
