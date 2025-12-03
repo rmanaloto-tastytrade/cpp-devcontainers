@@ -1,5 +1,5 @@
 {
-  "name": "boost-ut",
+  "name": "bext-ut",
   "version": "2.3.1",
   "description": "Boost.Ext.Ut unit testing framework (header-only)",
   "homepage": "https://github.com/boost-ext/ut",

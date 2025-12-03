@@ -8,7 +8,7 @@ This repo is driven by CMake presets and vcpkg; devcontainers only supply the to
   - Chainload toolchains under `cmake/toolchains/*.cmake` for clang21/22/p2996 and gcc14/15.
   - Build/test presets map directly to configure presets; sanitizers exist for clang21/22; p2996 is debug-only today.
 - Toolchains: pick explicit compilers under `/opt/clang-p2996/bin/clang++-p2996`, `/opt/gcc-15/bin/g++-15`, etc.
-- vcpkg: `vcpkg.json` dependencies include fmt, ms-gsl, highway, quill, and an overlay port for boost-ext/ut (plus overlay ports boost-ext-outcome, qlibs-core, stdx, cib).
+- vcpkg: `vcpkg.json` dependencies include fmt, ms-gsl, highway, quill, and an overlay port for bext-ut (plus overlay ports boost-ext-outcome, qlibs-core, stdx, cib).
 - Tests: `boost::ut` (no gtest). `SLOTMAP_BUILD_TESTS` toggles them; `ctest` is invoked via test presets.
 - Docs: custom `docs` target runs `scripts/generate_docs.sh` (mrdocs + doxygen), gated by `SLOTMAP_BUILD_DOCS`.
 - Devcontainer independence: presets/toolchains are project-owned; images just need compilers at `/opt/clang-p2996`, `/opt/gcc-15`, LLVM apt toolchains, vcpkg root, ninja/cmake.
@@ -22,7 +22,7 @@ This repo is driven by CMake presets and vcpkg; devcontainers only supply the to
   - Package preset: CPack (tgz/zip/deb/rpm as needed).
   - Docs preset: invoke the existing `docs` target.
 - **Toolchain files**: one per devcontainer permutation (already present for clang21/22/p2996, gcc14/15). Keep paths stable under `/opt/...` so devcontainers remain generic.
-- **vcpkg**: rely on the existing manifests/overlays; boost-ext/ut is provided via the overlay port and consumed through `find_package(ut CONFIG)`. No gtest dependency.
+- **vcpkg**: rely on the existing manifests/overlays; bext-ut is provided via the overlay port and consumed through `find_package(ut CONFIG)`. No gtest dependency.
 - **Automation/AI friendliness**:
   - Clear preset naming: `<compiler>-<config>-<purpose>` (e.g., `clang22-release`, `clang22-asan`, `gcc15-coverage`, `clang-p2996-debug`).
   - Ensure presets emit compile_commands.json, cache flags, and sensible defaults (warnings-as-errors on Debug).
