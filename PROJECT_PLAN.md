@@ -1,6 +1,7 @@
 # Project Plan
 
 1. **Environment & Tooling (Current phase)**  
+   - **Priority: CMake/vcpkg workflow presets refresh** — see `docs/cmake_workflow.md` for the planned preset/toolchain model (C++26/C23 defaults, boost::ut tests, coverage/static-analysis/docs/package presets, per-permutation toolchain files).
    - Current status/details live in `docs/ai_devcontainer_workflow.md` (devcontainer matrix/build/verify) and `docs/ai_mutagen_runbook.md` (Mutagen setup/validation); the plan stays high-level here.  
    - **Priority: unblock Mutagen** – `scripts/verify_mutagen.sh`, `docs/mutagen-validation.md`, `docs/mutagen-research.md`. Blocker: Mutagen constructs a bad ssh command (`host` becomes literal `ssh`), so `sync create` fails even though plain SSH works. Next: run the Mutagen daemon in foreground with a logging ssh wrapper, enforce ssh command via `~/.mutagen.yml` or PATH-wrapped ssh, then re-run `verify_devcontainer.sh --require-ssh` with `REQUIRE_MUTAGEN=1` across all envs.  
    - **Remote Docker bake + devcontainer matrix** – all permutations built and verified on `c24s1.ch2` and `c090s4.ny5` (ports 9501–9506) using `scripts/run_local_devcontainer.sh` + `scripts/verify_devcontainer.sh --require-ssh`. Tooling present: clang/gcc variants, ninja, cmake, vcpkg, mrdocs, mutagen 0.18.1, all under `/usr/local`.  

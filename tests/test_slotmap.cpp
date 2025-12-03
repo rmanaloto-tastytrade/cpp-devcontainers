@@ -1,5 +1,11 @@
-#include <gtest/gtest.h>
+#include <boost/ut.hpp>
 
-TEST(SlotMapSmoke, Placeholder) {
-    EXPECT_EQ(1, 1);
+int main() {
+    using namespace boost::ut;
+
+    "SlotMap smoke"_test = [] {
+        expect(1_i == 1);
+    };
+
+    return 0;
 }

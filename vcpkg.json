@@ -7,7 +7,7 @@
     "ms-gsl",
     "highway",
     "quill",
-    "gtest",
+    "boost-ut",
     {
       "name": "boost-ext-outcome"
     },
