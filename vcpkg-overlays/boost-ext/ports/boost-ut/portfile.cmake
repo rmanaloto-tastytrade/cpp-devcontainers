@@ -2,7 +2,7 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO boost-ext/ut
     REF v2.3.1
-    SHA512 068ab84a28a41dfef27ad97b9be89ecacf4bdac7357fa865f5e7eecedbe9c4a1a8ced2e795b40943ec85d49a0427d8fc270582eba1b544bb9ecc261f95163a2b
+    SHA512 f95bdc9ba483f309bdcbe57d2fef92a0b4301bdb1c83700e711ac152c72a76b1d502a16462cca48074db024c0eb97920ffca7b3236f04c3bb40080c672c80f50
     HEAD_REF master
 )
 
