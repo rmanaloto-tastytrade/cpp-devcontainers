@@ -204,57 +204,64 @@
     }
   ],
   "buildPresets": [
-    { "name": "clang21-debug", "configurePreset": "clang21-debug" },
-    { "name": "clang21-release", "configurePreset": "clang21-release" },
-    { "name": "clang21-asan", "configurePreset": "clang21-asan" },
-    { "name": "clang21-ubsan", "configurePreset": "clang21-ubsan" },
-    { "name": "clang21-cpp26-debug", "configurePreset": "clang21-cpp26-debug" },
-    { "name": "clang22-debug", "configurePreset": "clang22-debug" },
-    { "name": "clang22-release", "configurePreset": "clang22-release" },
-    { "name": "clang22-asan", "configurePreset": "clang22-asan" },
-    { "name": "clang22-ubsan", "configurePreset": "clang22-ubsan" },
-    { "name": "clang22-cpp26-debug", "configurePreset": "clang22-cpp26-debug" },
-    { "name": "gcc14-debug", "configurePreset": "gcc14-debug" },
-    { "name": "gcc14-release", "configurePreset": "gcc14-release" },
-    { "name": "gcc15-debug", "configurePreset": "gcc15-debug" },
-    { "name": "gcc15-release", "configurePreset": "gcc15-release" },
-    { "name": "clang-p2996-debug", "configurePreset": "clang-p2996-debug" }
+    { "name": "clang21-debug", "configurePreset": "clang21-debug", "configuration": "Debug" },
+    { "name": "clang21-release", "configurePreset": "clang21-release", "configuration": "Release" },
+    { "name": "clang21-asan", "configurePreset": "clang21-asan", "configuration": "Debug" },
+    { "name": "clang21-ubsan", "configurePreset": "clang21-ubsan", "configuration": "Debug" },
+    { "name": "clang21-cpp26-debug", "configurePreset": "clang21-cpp26-debug", "configuration": "Debug" },
+    { "name": "clang22-debug", "configurePreset": "clang22-debug", "configuration": "Debug" },
+    { "name": "clang22-release", "configurePreset": "clang22-release", "configuration": "Release" },
+    { "name": "clang22-asan", "configurePreset": "clang22-asan", "configuration": "Debug" },
+    { "name": "clang22-ubsan", "configurePreset": "clang22-ubsan", "configuration": "Debug" },
+    { "name": "clang22-cpp26-debug", "configurePreset": "clang22-cpp26-debug", "configuration": "Debug" },
+    { "name": "gcc14-debug", "configurePreset": "gcc14-debug", "configuration": "Debug" },
+    { "name": "gcc14-release", "configurePreset": "gcc14-release", "configuration": "Release" },
+    { "name": "gcc15-debug", "configurePreset": "gcc15-debug", "configuration": "Debug" },
+    { "name": "gcc15-release", "configurePreset": "gcc15-release", "configuration": "Release" },
+    { "name": "clang-p2996-debug", "configurePreset": "clang-p2996-debug", "configuration": "Debug" }
   ],
   "testPresets": [
     {
       "name": "clang21-debug",
       "configurePreset": "clang21-debug",
-      "output": { "outputOnFailure": true }
+      "output": { "outputOnFailure": true },
+      "configuration": "Debug"
     },
     {
       "name": "clang21-asan",
       "configurePreset": "clang21-asan",
-      "output": { "outputOnFailure": true }
+      "output": { "outputOnFailure": true },
+      "configuration": "Debug"
     },
     {
       "name": "clang21-ubsan",
       "configurePreset": "clang21-ubsan",
-      "output": { "outputOnFailure": true }
+      "output": { "outputOnFailure": true },
+      "configuration": "Debug"
     },
     {
       "name": "clang22-debug",
       "configurePreset": "clang22-debug",
-      "output": { "outputOnFailure": true }
+      "output": { "outputOnFailure": true },
+      "configuration": "Debug"
     },
     {
       "name": "clang22-asan",
       "configurePreset": "clang22-asan",
-      "output": { "outputOnFailure": true }
+      "output": { "outputOnFailure": true },
+      "configuration": "Debug"
     },
     {
       "name": "clang22-ubsan",
       "configurePreset": "clang22-ubsan",
-      "output": { "outputOnFailure": true }
+      "output": { "outputOnFailure": true },
+      "configuration": "Debug"
     },
     {
       "name": "gcc15-release",
       "configurePreset": "gcc15-release",
-      "output": { "outputOnFailure": true }
+      "output": { "outputOnFailure": true },
+      "configuration": "Release"
     }
   ],
   "workflowPresets": [
