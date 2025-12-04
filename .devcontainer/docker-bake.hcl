@@ -36,6 +36,14 @@ variable "MUTAGEN_VERSION" {
   default = "v0.18.1"
 }
 
+variable "ZSTD_VERSION" {
+  default = "1.5.7"
+}
+
+variable "ZSTD_ARCHIVE" {
+  default = "zstd-1.5.7-linux-x86_64.tar.gz"
+}
+
 target "_base" {
   context    = "."
   dockerfile = ".devcontainer/Dockerfile"
@@ -64,6 +72,8 @@ target "_base" {
     SCCACHE_ARCHIVE    = "sccache-v0.12.0-x86_64-unknown-linux-musl.tar.gz"
     RIPGREP_VERSION    = "14.1.0"
     RIPGREP_ARCHIVE    = "ripgrep-14.1.0-x86_64-unknown-linux-musl.tar.gz"
+    ZSTD_VERSION       = "${ZSTD_VERSION}"
+    ZSTD_ARCHIVE       = "${ZSTD_ARCHIVE}"
     NODE_VERSION       = "25.2.1"
     NODE_DIST          = "node-v25.2.1-linux-x64"
     BINUTILS_GDB_TAG   = "binutils-2_45_1"
@@ -139,6 +149,12 @@ target "ripgrep" {
   dependsOn = ["base"]
 }
 
+target "zstd" {
+  inherits  = ["_base"]
+  target    = "zstd"
+  dependsOn = ["base"]
+}
+
 target "cppcheck" {
   inherits  = ["_base"]
   target    = "cppcheck"
@@ -197,6 +213,7 @@ group "tools" {
     "ccache",
     "sccache",
     "ripgrep",
+    "zstd",
     "cppcheck",
     "valgrind",
     "python_tools",
