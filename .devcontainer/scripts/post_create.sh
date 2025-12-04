@@ -5,6 +5,10 @@ CURRENT_USER="${DEVCONTAINER_USER:-$(id -un)}"
 CURRENT_GROUP="$(id -gn "$CURRENT_USER" 2>/dev/null || id -gn)"
 WORKSPACE_DIR="${WORKSPACE_FOLDER:-/home/${CURRENT_USER}/workspace}"
 CLANG_VARIANT="${CLANG_VARIANT:-21}"
+SUDO=""
+if command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
+  SUDO="sudo -n"
+fi
 CACHE_ROOT="/cppdev-cache"
 CCACHE_DIR="${CCACHE_DIR:-${CACHE_ROOT}/ccache}"
 SCCACHE_DIR="${SCCACHE_DIR:-${CACHE_ROOT}/sccache}"
@@ -13,16 +17,22 @@ VCPKG_BINARY_CACHE="${VCPKG_DEFAULT_BINARY_CACHE:-${CACHE_ROOT}/vcpkg-archives}"
 PERSISTENT_TMP="${TMPDIR:-${CACHE_ROOT}/tmp}"
 VCPKG_REPO="${VCPKG_REPO:-${CACHE_ROOT}/vcpkg-repo}"
 
-if command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
-  sudo mkdir -p /opt/vcpkg
-  sudo chown -R "${CURRENT_USER}:${CURRENT_GROUP}" /opt/vcpkg "${WORKSPACE_DIR}" || true
-else
-  echo "[post_create] Skipping chown (sudo password required or unavailable)."
+chown_safe() {
+  if [ -n "${SUDO}" ]; then
+    ${SUDO} chown "$@"
+  else
+    chown "$@"
+  fi
+}
+
+if [ -n "${SUDO}" ]; then
+  ${SUDO} mkdir -p /opt/vcpkg
+  ${SUDO} chown -R "${CURRENT_USER}:${CURRENT_GROUP}" /opt/vcpkg "${WORKSPACE_DIR}" || true
 fi
 if [ -d /opt/vcpkg ] && [ ! -L /opt/vcpkg ]; then
   echo "[post_create] Replacing /opt/vcpkg directory with symlink to ${VCPKG_REPO}..."
-  if command -v sudo >/dev/null 2>&1; then
-    sudo -n rm -rf /opt/vcpkg || rm -rf /opt/vcpkg
+  if [ -n "${SUDO}" ]; then
+    ${SUDO} rm -rf /opt/vcpkg || rm -rf /opt/vcpkg
   else
     rm -rf /opt/vcpkg
   fi
@@ -30,11 +40,11 @@ fi
 
 echo "[post_create] Preparing persistent cache root at ${CACHE_ROOT}..."
 mkdir -p "${CACHE_ROOT}"/{ccache,sccache,vcpkg-downloads,vcpkg-archives,tmp}
-chown -R "${CURRENT_USER}:${CURRENT_GROUP}" "${CACHE_ROOT}"
+chown_safe -R "${CURRENT_USER}:${CURRENT_GROUP}" "${CACHE_ROOT}"
 
 # Prepare vcpkg caches on the persistent volume (env variables point to these)
 mkdir -p "${VCPKG_DOWNLOADS}" "${VCPKG_BINARY_CACHE}"
-chown -R "${CURRENT_USER}:${CURRENT_GROUP}" "${VCPKG_DOWNLOADS}" "${VCPKG_BINARY_CACHE}"
+chown_safe -R "${CURRENT_USER}:${CURRENT_GROUP}" "${VCPKG_DOWNLOADS}" "${VCPKG_BINARY_CACHE}"
 
 # Ensure vcpkg checkout lives on the persistent volume
 mkdir -p "${VCPKG_REPO}"
@@ -52,8 +62,8 @@ if [ ! -x "${VCPKG_REPO}/vcpkg" ]; then
 fi
 link_with_sudo() {
   local target="$1"; local link="$2"
-  if command -v sudo >/dev/null 2>&1; then
-    sudo -n ln -snf "$target" "$link" || ln -snf "$target" "$link"
+  if [ -n "${SUDO}" ]; then
+    ${SUDO} ln -snf "$target" "$link" || ln -snf "$target" "$link"
   else
     ln -snf "$target" "$link"
   fi
@@ -61,16 +71,16 @@ link_with_sudo() {
 # Ensure /opt/vcpkg points at the persistent repo and downloads points at the cache
 link_with_sudo "${VCPKG_REPO}" /opt/vcpkg
 link_with_sudo "${VCPKG_DOWNLOADS}" /opt/vcpkg/downloads
-chown -R "${CURRENT_USER}:${CURRENT_GROUP}" "${VCPKG_REPO}" /opt/vcpkg
-if command -v sudo >/dev/null 2>&1; then
-  sudo -n ln -snf /opt/vcpkg/vcpkg /usr/local/bin/vcpkg || true
+chown_safe -R "${CURRENT_USER}:${CURRENT_GROUP}" "${VCPKG_REPO}" /opt/vcpkg
+if [ -n "${SUDO}" ]; then
+  ${SUDO} ln -snf /opt/vcpkg/vcpkg /usr/local/bin/vcpkg || true
 else
   ln -snf /opt/vcpkg/vcpkg /usr/local/bin/vcpkg || true
 fi
 
 # Ensure ccache/sccache dirs are owned and writable
 mkdir -p "${CCACHE_DIR}" "${SCCACHE_DIR}"
-chown -R "${CURRENT_USER}:${CURRENT_GROUP}" "${CCACHE_DIR}" "${SCCACHE_DIR}"
+chown_safe -R "${CURRENT_USER}:${CURRENT_GROUP}" "${CCACHE_DIR}" "${SCCACHE_DIR}"
 
 # Make /tmp persistent via symlink into the cache volume if empty
 if [ ! -L /tmp ] && [ -z "$(ls -A /tmp)" ]; then
