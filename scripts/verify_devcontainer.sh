@@ -167,6 +167,7 @@ SSH_STRICT=(-o StrictHostKeyChecking=accept-new)
 SSH_CMD_PROXY=(ssh -i "${SSH_KEY_PATH}" -o IdentitiesOnly=yes "${SSH_STRICT[@]}" -J "${REMOTE_USER}@${REMOTE_HOST}" -p "${SSH_PORT}" "${CONTAINER_SSH_USER}@127.0.0.1")
 SSH_CMD_DIRECT=(ssh -i "${SSH_KEY_PATH}" -o IdentitiesOnly=yes "${SSH_STRICT[@]}" -p "${SSH_PORT}" "${CONTAINER_SSH_USER}@${REMOTE_HOST}")
 SSH_CMD_LOCALHOST=(ssh -i "${SSH_KEY_PATH}" -o IdentitiesOnly=yes "${SSH_STRICT[@]}" -p "${SSH_PORT}" "${CONTAINER_SSH_USER}@127.0.0.1")
+set +u
 SSH_TARGET_CMD=$(cat <<EOF
 cat <<'EOS' >/tmp/verify_devcontainer.sh
 ${CHECK_SCRIPT}
@@ -174,9 +175,39 @@ EOS
 bash /tmp/verify_devcontainer.sh
 RC=\$?
 rm -f /tmp/verify_devcontainer.sh
-exit \$RC
+if [ \$RC -ne 0 ]; then exit \$RC; fi
+
+# Validate vcpkg symlinks point to the persistent cache volume
+check_vcpkg_link() {
+  local name="\$1"
+  local path="/opt/vcpkg/\${name}"
+  if [ ! -L "\$path" ]; then
+    echo "[verify] ERROR: \${path} is not a symlink"
+    return 1
+  fi
+  local target
+  target="$(readlink -f "\$path" 2>/dev/null || readlink "\$path")"
+  case "\$target" in
+    /cppdev-cache/*) ;;
+    *)
+      echo "[verify] ERROR: \${path} -> \${target} (expected under /cppdev-cache)"
+      return 1
+      ;;
+  esac
+  if [ ! -d "\$target" ]; then
+    echo "[verify] ERROR: target directory missing: \${target}"
+    return 1
+  fi
+  echo "[verify] vcpkg \${name}: \${path} -> \${target}"
+}
+
+check_vcpkg_link downloads || exit 1
+check_vcpkg_link packages  || exit 1
+check_vcpkg_link buildtrees || exit 1
+exit 0
 EOF
 )
+set -u
 
 SSH_OK=0
 if "${SSH_CMD_DIRECT[@]}" "${SSH_TARGET_CMD}" 2>"${SSH_ERR_LOG}"; then
