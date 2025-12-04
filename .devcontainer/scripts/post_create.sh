@@ -9,9 +9,8 @@ CCACHE_DIR="${CCACHE_DIR:-${CACHE_ROOT}/ccache}"
 SCCACHE_DIR="${SCCACHE_DIR:-${CACHE_ROOT}/sccache}"
 VCPKG_DOWNLOADS="${VCPKG_DOWNLOADS:-${CACHE_ROOT}/vcpkg-downloads}"
 VCPKG_BINARY_CACHE="${VCPKG_DEFAULT_BINARY_CACHE:-${CACHE_ROOT}/vcpkg-archives}"
-VCPKG_PACKAGES="${VCPKG_PACKAGES:-${CACHE_ROOT}/vcpkg-packages}"
-VCPKG_BUILDTREES="${VCPKG_BUILDTREES:-${CACHE_ROOT}/vcpkg-buildtrees}"
 PERSISTENT_TMP="${TMPDIR:-${CACHE_ROOT}/tmp}"
+VCPKG_REPO="${VCPKG_REPO:-${CACHE_ROOT}/vcpkg-repo}"
 
 if command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
   sudo mkdir -p /opt/vcpkg
@@ -22,27 +21,28 @@ fi
 
 echo "[post_create] Preparing persistent cache root at ${CACHE_ROOT}..."
 mkdir -p "${CACHE_ROOT}"/{ccache,sccache,vcpkg-downloads,vcpkg-archives,tmp}
-mkdir -p "${VCPKG_PACKAGES}" "${VCPKG_BUILDTREES}"
 chown -R "${CURRENT_USER}:${CURRENT_GROUP}" "${CACHE_ROOT}"
 
-# Point vcpkg downloads/binary cache at the persistent volume
-mkdir -p /opt/vcpkg
-if [ -d /opt/vcpkg/downloads ] || [ -L /opt/vcpkg/downloads ]; then
-  rm -rf /opt/vcpkg/downloads
+# Prepare vcpkg caches on the persistent volume (env variables point to these)
+mkdir -p "${VCPKG_DOWNLOADS}" "${VCPKG_BINARY_CACHE}"
+chown -R "${CURRENT_USER}:${CURRENT_GROUP}" "${VCPKG_DOWNLOADS}" "${VCPKG_BINARY_CACHE}"
+
+# Ensure vcpkg checkout lives on the persistent volume
+mkdir -p "${VCPKG_REPO}"
+if [ ! -d "${VCPKG_REPO}/.git" ]; then
+  echo "[post_create] Cloning vcpkg into ${VCPKG_REPO}..."
+  git clone https://github.com/microsoft/vcpkg.git "${VCPKG_REPO}"
+else
+  echo "[post_create] Updating vcpkg in ${VCPKG_REPO}..."
+  git -C "${VCPKG_REPO}" fetch --depth=1 origin main >/dev/null 2>&1 || true
+  git -C "${VCPKG_REPO}" reset --hard origin/main >/dev/null 2>&1 || true
 fi
-ln -snf "${VCPKG_DOWNLOADS}" /opt/vcpkg/downloads
-mkdir -p "${VCPKG_BINARY_CACHE}"
-chown -R "${CURRENT_USER}:${CURRENT_GROUP}" /opt/vcpkg "${VCPKG_DOWNLOADS}" "${VCPKG_BINARY_CACHE}"
-# Persist vcpkg packages/buildtrees
-if [ -d /opt/vcpkg/packages ] || [ -L /opt/vcpkg/packages ]; then
-  rm -rf /opt/vcpkg/packages
+if [ ! -x "${VCPKG_REPO}/vcpkg" ]; then
+  echo "[post_create] Bootstrapping vcpkg..."
+  (cd "${VCPKG_REPO}" && ./bootstrap-vcpkg.sh -disableMetrics)
 fi
-if [ -d /opt/vcpkg/buildtrees ] || [ -L /opt/vcpkg/buildtrees ]; then
-  rm -rf /opt/vcpkg/buildtrees
-fi
-ln -snf "${VCPKG_PACKAGES}" /opt/vcpkg/packages
-ln -snf "${VCPKG_BUILDTREES}" /opt/vcpkg/buildtrees
-chown -R "${CURRENT_USER}:${CURRENT_GROUP}" "${VCPKG_PACKAGES}" "${VCPKG_BUILDTREES}"
+ln -snf "${VCPKG_REPO}" /opt/vcpkg
+chown -R "${CURRENT_USER}:${CURRENT_GROUP}" "${VCPKG_REPO}" /opt/vcpkg
 
 # Ensure ccache/sccache dirs are owned and writable
 mkdir -p "${CCACHE_DIR}" "${SCCACHE_DIR}"
