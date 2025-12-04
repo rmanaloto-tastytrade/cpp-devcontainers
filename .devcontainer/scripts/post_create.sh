@@ -21,7 +21,11 @@ else
 fi
 if [ -d /opt/vcpkg ] && [ ! -L /opt/vcpkg ]; then
   echo "[post_create] Replacing /opt/vcpkg directory with symlink to ${VCPKG_REPO}..."
-  rm -rf /opt/vcpkg
+  if command -v sudo >/dev/null 2>&1; then
+    sudo -n rm -rf /opt/vcpkg || rm -rf /opt/vcpkg
+  else
+    rm -rf /opt/vcpkg
+  fi
 fi
 
 echo "[post_create] Preparing persistent cache root at ${CACHE_ROOT}..."
