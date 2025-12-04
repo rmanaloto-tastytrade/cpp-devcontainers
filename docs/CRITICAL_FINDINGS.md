@@ -334,7 +334,7 @@ Current setup uses a "sandbox" pattern:
 ```
 Remote Host:
   ~/dev/github/SlotMap        (canonical repo, git-managed)
-  ~/dev/devcontainers/SlotMap  (sandbox, throwaway copy)
+  ~/dev/devcontainers/cpp-devcontainer  (sandbox, throwaway copy)
   ~/dev/devcontainers/workspace (bind-mounted to container)
 ```
 
@@ -357,7 +357,7 @@ devcontainer up --workspace-folder . --docker-host ssh://rmanaloto@c24s1.ch2
 
 **Current (CLI on remote host):**
 ```
-Build context: ~/dev/devcontainers/SlotMap (local to Docker daemon)
+Build context: ~/dev/devcontainers/cpp-devcontainer (local to Docker daemon)
 Transfer: 0 bytes (no network transfer)
 Time: ~0 seconds
 ```

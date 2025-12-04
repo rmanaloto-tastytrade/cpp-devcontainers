@@ -8,7 +8,7 @@
    - Clang branch mapping is centralized in `scripts/clang_branch_utils.sh` (stable→20, qualification→21, development→22) and flows through Dockerfile/bake/verify.  
    - Add/maintain workflow diagrams and ensure Dockerfile lint rules remain satisfied; keep package versions pinned once stable.  
    - Keep `docs/ai_devcontainer_workflow.md` and `docs/CURRENT_WORKFLOW.md` as the entry points for new agents.
-   - TODO: scrub remaining repo/sandbox path references (`~/dev/github/SlotMap`, `~/dev/devcontainers/SlotMap`, diagrams) to use a neutral cpp-devcontainers layout.
+   - Repo/sandbox paths now use the neutral cpp-devcontainers layout (e.g., `~/dev/github/SlotMap`, `~/dev/devcontainers/cpp-devcontainer`); keep new docs consistent.
 
 2. **Policy & Concept Scaffolding**  
    - Formalize concepts in `include/slotmap/Concepts.hpp` for handles, slots, storage, and lookup.  

@@ -144,7 +144,7 @@ sequenceDiagram
     RemoteGit->>GitHub: Fetch latest
 
     Remote->>RunScript: Execute build script
-    RunScript->>RunScript: rm -rf ~/dev/devcontainers/SlotMap
+    RunScript->>RunScript: rm -rf ~/dev/devcontainers/cpp-devcontainer
     RunScript->>RunScript: rsync repo → sandbox
     RunScript->>RunScript: Copy .pub keys to .devcontainer/ssh/
 
@@ -706,7 +706,7 @@ graph TB
 sequenceDiagram
     participant Mac as Mac: ~/dev/github/SlotMap
     participant RemoteRepo as Remote: ~/dev/github/SlotMap
-    participant Sandbox as Remote: ~/dev/devcontainers/SlotMap
+    participant Sandbox as Remote: ~/dev/devcontainers/cpp-devcontainer
     participant Workspace as Remote: ~/dev/devcontainers/workspace
     participant Container as Container: ~/workspace
 

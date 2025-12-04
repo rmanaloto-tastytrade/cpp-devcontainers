@@ -15,7 +15,7 @@
 
 ## Executive Summary
 - Deploy from the Mac via `scripts/deploy_remote_devcontainer.sh`; it pushes the branch, ensures the Docker SSH context, copies a public key to the host cache, then triggers the remote rebuild.
-- Remote host (`c24s1.ch2`) rebuilds the sandbox (`~/dev/devcontainers/SlotMap`), stages host `~/.ssh/*.pub`, bakes images with BuildKit, and runs `devcontainer up` with the host agent socket mounted.
+- Remote host (`c24s1.ch2`) rebuilds the sandbox (`~/dev/devcontainers/cpp-devcontainer`), stages host `~/.ssh/*.pub`, bakes images with BuildKit, and runs `devcontainer up` with the host agent socket mounted.
 - Container lives at `/home/rmanaloto/workspace`, exposes SSH on the configured host port (loopback-only to container 2222), and uses the host agent for outbound GitHub SSH (port 443 fallback).
 
 ## Architecture Overview
@@ -30,7 +30,7 @@
 ┌───────────────────────────▼──────────────────────────────────────────┐
 │                     Remote Host: c24s1.ch2                          │
 │  - Repo: ~/dev/github/SlotMap                                       │
-│  - Sandbox: ~/dev/devcontainers/SlotMap                             │
+│  - Sandbox: ~/dev/devcontainers/cpp-devcontainer                    │
 │  - Workspace bind source: ~/dev/devcontainers/workspace             │
 │  - Key cache: ~/.ssh/*.pub → staged into sandbox/.devcontainer/ssh  │
 │  - SSH agent socket: $SSH_AUTH_SOCK (bound into container)          │
@@ -63,7 +63,7 @@ Access pattern: host port 9222 is bound to 127.0.0.1; reach it via SSH tunnel or
 ### Phase 2: Remote Build & Deploy (c24s1.ch2)
 - `run_local_devcontainer.sh` actions:
   - Ensures an SSH agent socket exists; starts one and adds the host key if `SSH_AUTH_SOCK` is absent.
-  - Recreates the sandbox at `~/dev/devcontainers/SlotMap` and workspace source at `~/dev/devcontainers/workspace` from the canonical repo (`~/dev/github/SlotMap`).
+- Recreates the sandbox at `~/dev/devcontainers/cpp-devcontainer` and workspace source at `~/dev/devcontainers/workspace` from the canonical repo (`~/dev/github/SlotMap`).
   - Stages `KEY_CACHE/*.pub` into `.devcontainer/ssh` in both sandbox and workspace; no private keys are copied.
   - Validates `.devcontainer/docker-bake.hcl` and `devcontainer.json`; installs devcontainer CLI `0.80.2` if needed.
   - Bakes `cpp-dev-base:local` if missing, then bakes the requested image (default `cpp-devcontainer:local`; override via env per permutation) with user/uid/gid args.

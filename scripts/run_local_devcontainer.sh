@@ -8,7 +8,7 @@ set -euo pipefail
 #
 # Directory layout (defaults can be overridden via environment variables):
 #   REPO_PATH    : $HOME/dev/github/SlotMap            (clean git clone)
-#   SANDBOX_PATH : $HOME/dev/devcontainers/SlotMap     (recreated each run)
+#   SANDBOX_PATH : $HOME/dev/devcontainers/cpp-devcontainer (recreated each run)
 #   KEY_CACHE    : $HOME/.ssh                          (host public keys used for authorized_keys)
 #
 # Requirements: devcontainer CLI installed on the remote host, Docker running,
@@ -30,7 +30,7 @@ if [[ -f "$CLANG_UTILS_PATH" ]]; then
 fi
 
 REPO_PATH=${REPO_PATH:-"$HOME/dev/github/SlotMap"}
-SANDBOX_PATH=${SANDBOX_PATH:-"$HOME/dev/devcontainers/SlotMap"}
+SANDBOX_PATH=${SANDBOX_PATH:-"$HOME/dev/devcontainers/cpp-devcontainer"}
 KEY_CACHE=${KEY_CACHE:-"$HOME/.ssh"}
 SSH_SUBDIR=".devcontainer/ssh"
 DEV_IMAGE=${DEVCONTAINER_IMAGE:-"cpp-devcontainer:local"}

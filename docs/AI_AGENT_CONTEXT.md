@@ -24,7 +24,7 @@ remote_host:
   os: "Ubuntu 24.04"
   user: "<remote_user>"        # example: rmanaloto
   canonical_repo: "~/dev/github/SlotMap"
-  sandbox_path: "~/dev/devcontainers/SlotMap"
+  sandbox_path: "~/dev/devcontainers/cpp-devcontainer"
   workspace_path: "~/dev/devcontainers/workspace"
   ssh_keys_cache: "~/.ssh"     # public keys only; private keys stay on host agent
 
