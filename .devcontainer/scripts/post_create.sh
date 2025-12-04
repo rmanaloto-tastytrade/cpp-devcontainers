@@ -50,12 +50,22 @@ if [ ! -x "${VCPKG_REPO}/vcpkg" ]; then
   echo "[post_create] Bootstrapping vcpkg..."
   (cd "${VCPKG_REPO}" && ./bootstrap-vcpkg.sh -disableMetrics)
 fi
+link_with_sudo() {
+  local target="$1"; local link="$2"
+  if command -v sudo >/dev/null 2>&1; then
+    sudo -n ln -snf "$target" "$link" || ln -snf "$target" "$link"
+  else
+    ln -snf "$target" "$link"
+  fi
+}
 # Ensure /opt/vcpkg points at the persistent repo and downloads points at the cache
-ln -snf "${VCPKG_REPO}" /opt/vcpkg
-ln -snf "${VCPKG_DOWNLOADS}" /opt/vcpkg/downloads
+link_with_sudo "${VCPKG_REPO}" /opt/vcpkg
+link_with_sudo "${VCPKG_DOWNLOADS}" /opt/vcpkg/downloads
 chown -R "${CURRENT_USER}:${CURRENT_GROUP}" "${VCPKG_REPO}" /opt/vcpkg
 if command -v sudo >/dev/null 2>&1; then
   sudo -n ln -snf /opt/vcpkg/vcpkg /usr/local/bin/vcpkg || true
+else
+  ln -snf /opt/vcpkg/vcpkg /usr/local/bin/vcpkg || true
 fi
 
 # Ensure ccache/sccache dirs are owned and writable
