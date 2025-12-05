@@ -54,16 +54,17 @@ chown_safe -R "${CURRENT_USER}:${CURRENT_GROUP}" "${VCPKG_DOWNLOADS}" "${VCPKG_B
 mkdir -p "${VCPKG_REPO}"
 if [ ! -d "${VCPKG_REPO}/.git" ]; then
   echo "[post_create] Cloning vcpkg into ${VCPKG_REPO}..."
-  git clone https://github.com/microsoft/vcpkg.git "${VCPKG_REPO}"
-else
-  echo "[post_create] Updating vcpkg in ${VCPKG_REPO}..."
-  git -C "${VCPKG_REPO}" fetch --depth=1 origin main >/dev/null 2>&1 || true
-  git -C "${VCPKG_REPO}" reset --hard origin/main >/dev/null 2>&1 || true
-fi
-if [ -n "${VCPKG_REF}" ]; then
-  echo "[post_create] Checking out vcpkg ref ${VCPKG_REF}..."
+  if [ -n "${VCPKG_REF}" ]; then
+    git clone --depth=1 --branch "${VCPKG_REF}" https://github.com/microsoft/vcpkg.git "${VCPKG_REPO}"
+  else
+    git clone --depth=1 https://github.com/microsoft/vcpkg.git "${VCPKG_REPO}"
+  fi
+elif [ -n "${VCPKG_REF}" ]; then
+  echo "[post_create] Checking out pinned vcpkg ref ${VCPKG_REF}..."
   git -C "${VCPKG_REPO}" fetch --depth=1 origin "${VCPKG_REF}" || true
   git -C "${VCPKG_REPO}" checkout "${VCPKG_REF}" || true
+else
+  echo "[post_create] Leaving existing vcpkg checkout as-is (no VCPKG_REF set)."
 fi
 if [ ! -x "${VCPKG_REPO}/vcpkg" ]; then
   echo "[post_create] Bootstrapping vcpkg..."
@@ -143,6 +144,8 @@ SSH_TARGET="$HOME/.ssh"
 if compgen -G "$SSH_SOURCE/"'*.pub' > /dev/null; then
   mkdir -p "$SSH_TARGET"
   chmod 700 "$SSH_TARGET"
+  touch "$SSH_TARGET/known_hosts"
+  chmod 600 "$SSH_TARGET/known_hosts"
   if ls "$SSH_TARGET"/id_* 2>/dev/null | grep -v '\.pub$' > /dev/null; then
     echo "[post_create] WARNING: Private keys detected in $SSH_TARGET - will not modify them"
   fi
@@ -176,9 +179,14 @@ fi
   echo "  Port 443"
   echo "  User git"
   echo "  CanonicalizeHostname no  # avoid company DNS suffixes (e.g., github.com.tastyworks.com)"
-  echo "  StrictHostKeyChecking accept-new  # allow first connect to add host key without interactivity"
+  echo "  StrictHostKeyChecking yes"
   echo "  UserKnownHostsFile ~/.ssh/known_hosts"
 } >> "$SSH_CONFIG_FILE"
 chmod 600 "$SSH_CONFIG_FILE"
+
+# Preseed GitHub host keys for port 443 to avoid StrictHostKeyChecking prompts
+if command -v ssh-keyscan >/dev/null 2>&1; then
+  ssh-keyscan -p 443 ssh.github.com 2>/dev/null | sort -u >> "$SSH_TARGET/known_hosts" || true
+fi
 
 # CMake configuration is project-specific; skip auto-configure for generic devcontainer

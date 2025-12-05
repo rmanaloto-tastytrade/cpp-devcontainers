@@ -183,6 +183,23 @@ ensure_devcontainer_cli() {
 }
 
 [[ -d "$REPO_PATH" ]] || { echo "[remote] ERROR: Repo path not found."; exit 1; }
+
+echo "[remote] Updating repo at $REPO_PATH..."
+if git -C "$REPO_PATH" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git -C "$REPO_PATH" fetch --all --prune
+  CURRENT_BRANCH="${BRANCH:-$(git -C "$REPO_PATH" rev-parse --abbrev-ref HEAD)}"
+  if git -C "$REPO_PATH" show-ref --verify --quiet "refs/remotes/origin/${CURRENT_BRANCH}"; then
+    git -C "$REPO_PATH" checkout "${CURRENT_BRANCH}"
+    git -C "$REPO_PATH" reset --hard "origin/${CURRENT_BRANCH}"
+  else
+    git -C "$REPO_PATH" pull --ff-only
+  fi
+  git -C "$REPO_PATH" submodule update --init --recursive
+else
+  echo "[remote] ERROR: $REPO_PATH is not a git repository." >&2
+  exit 1
+fi
+
 if [[ -z "${SSH_AUTH_SOCK:-}" || ! -S "${SSH_AUTH_SOCK:-}" ]]; then
   echo "[remote] SSH_AUTH_SOCK not set; starting a fresh ssh-agent..."
   eval "$(ssh-agent -s)"
