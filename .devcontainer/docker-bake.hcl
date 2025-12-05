@@ -25,7 +25,15 @@ variable "CLANG_DEV" {
 }
 
 variable "GCC_VERSION" {
-  default = "15"
+  default = "14"
+}
+
+variable "ENABLE_CLANG_P2996" {
+  default = "0"
+}
+
+variable "ENABLE_GCC15" {
+  default = "0"
 }
 
 variable "EGET_VERSION" {
@@ -222,6 +230,10 @@ target "tools_merge" {
   inherits  = ["_base"]
   target    = "tools_merge"
   dependsOn = ["tools"]
+  args = {
+    ENABLE_CLANG_P2996 = "${ENABLE_CLANG_P2996}"
+    ENABLE_GCC15       = "${ENABLE_GCC15}"
+  }
 }
 
 target "devcontainer" {
