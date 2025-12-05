@@ -349,6 +349,9 @@ export DEVCONTAINER_IMAGE="${DEV_IMAGE}"
 echo "[remote] Building container user ${CONTAINER_USER} (uid=${CONTAINER_UID}, gid=${CONTAINER_GID})"
 
 echo "[remote] Running devcontainer up..."
+echo "[remote] Ensuring cache volume permissions for ${DEVCONTAINER_CACHE_VOLUME}..."
+"${DOCKER_CMD[@]}" run --rm -v "${DEVCONTAINER_CACHE_VOLUME}:/data" --user root "${DEV_IMAGE}" chown -R "${CONTAINER_UID}:${CONTAINER_GID}" /data
+
 devcontainer up \
   --workspace-folder "$SANDBOX_PATH" \
   --remove-existing-container \
