@@ -2,7 +2,7 @@
 
 Sources:
 - Claude (opus) — actionable findings (see claude_devcontainer_review.md).
-- Codex — no usable response (session exploratory; see codex_devcontainer_review.md).
+- Codex — provided security/pinning/caching concerns (see codex_devcontainer_review.md).
 - Gemini — no usable response (CLI silent; see gemini_devcontainer_review.md).
 
 Key consolidated issues (from Claude + manual context):
@@ -14,6 +14,7 @@ Key consolidated issues (from Claude + manual context):
 6) ENABLE_GCC15 set in base bake target — causes gcc15 bleed; default to 0 in base, enable only in gcc15 permutations.
 7) IWYU commit/LLVM version hardcoded to clang_21 — align with CLANG_VARIANT per permutation.
 8) Optional: containerEnv lacks CC/CXX.
+9) Codex additional: pin downloads (curl installs) and apt repos; pin vcpkg commit; avoid broad buildx fs allow; scope caches per project; tighten SSH known_hosts/authorized_keys handling.
 
 Next actions recommended:
 - Refactor Dockerfile to add explicit permutation stages (gcc14/15 x clang21/22/p2996) that set CC/CXX/PATH and install only required toolchains (incl. libc++/abi for clang variants). Keep base minimal.

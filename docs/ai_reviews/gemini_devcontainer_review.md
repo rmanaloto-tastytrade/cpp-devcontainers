@@ -1,5 +1,5 @@
 # Gemini Review: Devcontainer Toolchain Isolation
 
-Attempted to run `gemini prompt "..."` with the review request. The CLI returned no output (after loading cached credentials) and did not produce a review. Treat this as "no usable response".
+Attempts (gemini CLI with positional prompt and with stdin content/YOLO) returned no analysis output. Treat this as “no usable response” for now.
 
-Next action: rerun Gemini with explicit file content via stdin if/when the CLI is responsive, and capture the output.
+Next action: retry when the CLI responds; pass file contents via stdin and capture output.
