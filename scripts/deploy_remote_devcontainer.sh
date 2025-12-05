@@ -107,6 +107,28 @@ if [[ -z "$REMOTE_USER" ]]; then
   fi
 fi
 
+# Fix: Respect SSH key from config file if not overridden by flag
+if [[ -n "${DEVCONTAINER_SSH_KEY:-}" ]]; then
+  # Only update if it's currently the default and not manually set via flag
+  # (Simplification: We assume if DEVCONTAINER_SSH_KEY is set, we want to use it unless user passed --ssh-key.
+  #  However, checking if user passed flag is hard here without extra vars. 
+  #  Standard priority: Flag > Env > Default.
+  #  Since SSH_KEY_PATH is initialized to default, simply overwriting it here works as "Env > Default".
+  #  BUT if user passed --ssh-key, SSH_KEY_PATH is already set to that. We shouldn't clobber it with Env.
+  #  We can check if SSH_KEY_PATH equals default "id_ed25519.pub". If so, safe to update.)
+   if [[ "$SSH_KEY_PATH" == "$HOME/.ssh/id_ed25519.pub" ]]; then
+      SSH_KEY_PATH="${DEVCONTAINER_SSH_KEY}"
+   fi
+fi
+
+# Fix: Ensure we are using the public key for copying
+if [[ "$SSH_KEY_PATH" != *.pub ]]; then
+  if [[ -f "${SSH_KEY_PATH}.pub" ]]; then
+    echo "[script] Resolving public key for deployment: ${SSH_KEY_PATH} -> ${SSH_KEY_PATH}.pub"
+    SSH_KEY_PATH="${SSH_KEY_PATH}.pub"
+  fi
+fi
+
 if [[ -z "$REMOTE_HOST" ]]; then
   die "Remote host is required (set DEVCONTAINER_REMOTE_HOST/DEFAULT_REMOTE_HOST or pass --remote-host)"
 fi

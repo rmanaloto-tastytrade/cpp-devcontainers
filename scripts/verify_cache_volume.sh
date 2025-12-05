@@ -11,7 +11,6 @@ set -euo pipefail
 # Optional:
 #   TARGET_CONTAINER_ID=<container_id>  # if omitted, first running container for the image is used
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 CONFIG_ENV_FILE="${CONFIG_ENV_FILE:-"$REPO_ROOT/config/env/devcontainer.env"}"
 # shellcheck source=/dev/null
