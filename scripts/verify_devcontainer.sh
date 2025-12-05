@@ -125,6 +125,16 @@ fi
 if [[ "${EXPECTED_GCC}" != "14" ]]; then
   UNEXPECTED_TOOLS+=("gcc-14")
 fi
+# Expected libc++ locations
+EXPECTED_LIBCXX_LIB=""
+EXPECTED_LIBCXX_INCLUDE=""
+if [[ "${EXPECTED_CLANG}" == "p2996" ]]; then
+  EXPECTED_LIBCXX_LIB="/opt/clang-p2996/lib/libc++.so"
+  EXPECTED_LIBCXX_INCLUDE="/opt/clang-p2996/include/c++/v1"
+elif [[ -n "${EXPECTED_CLANG}" ]]; then
+  EXPECTED_LIBCXX_LIB="/usr/lib/llvm-${EXPECTED_CLANG}/lib/libc++.so"
+  EXPECTED_LIBCXX_INCLUDE="/usr/lib/llvm-${EXPECTED_CLANG}/include/c++/v1"
+fi
 
 echo "[verify] Expected clang: ${EXPECTED_CLANG_CMD}; expected gcc: ${EXPECTED_GCC_CMD:-<none>}"
 
@@ -184,6 +194,22 @@ for tool in __UNEXPECTED_TOOLS__; do
   fi
 done
 check_path "$ORIG_PATH" $EXPECTED_PATH_PARTS
+if [ -n "__EXPECTED_LIBCXX_LIB__" ]; then
+  if [ ! -f "__EXPECTED_LIBCXX_LIB__" ]; then
+    echo "[verify] ERROR: missing libc++ at __EXPECTED_LIBCXX_LIB__"
+    missing=1
+  else
+    echo "[verify] libc++ lib: __EXPECTED_LIBCXX_LIB__"
+  fi
+fi
+if [ -n "__EXPECTED_LIBCXX_INCLUDE__" ]; then
+  if [ ! -d "__EXPECTED_LIBCXX_INCLUDE__" ]; then
+    echo "[verify] ERROR: missing libc++ includes at __EXPECTED_LIBCXX_INCLUDE__"
+    missing=1
+  else
+    echo "[verify] libc++ include: __EXPECTED_LIBCXX_INCLUDE__"
+  fi
+fi
 exit $missing
 EOF
 }
@@ -194,6 +220,8 @@ CHECK_SCRIPT="${CHECK_SCRIPT//__REQUIRED_TOOLS__/${REQUIRED_TOOLS_STR}}"
 CHECK_SCRIPT="${CHECK_SCRIPT//__EXPECTED_PATH_PARTS__/${EXPECTED_PATH_PARTS_STR}}"
 UNEXPECTED_TOOLS_STR="${UNEXPECTED_TOOLS[*]}"
 CHECK_SCRIPT="${CHECK_SCRIPT//__UNEXPECTED_TOOLS__/${UNEXPECTED_TOOLS_STR}}"
+CHECK_SCRIPT="${CHECK_SCRIPT//__EXPECTED_LIBCXX_LIB__/${EXPECTED_LIBCXX_LIB}}"
+CHECK_SCRIPT="${CHECK_SCRIPT//__EXPECTED_LIBCXX_INCLUDE__/${EXPECTED_LIBCXX_INCLUDE}}"
 
 # Ensure image exists on remote
 if ! "${DOCKER_CMD[@]}" image inspect "${IMAGE_TAG}" >/dev/null 2>&1; then
