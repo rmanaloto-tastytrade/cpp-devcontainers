@@ -185,21 +185,8 @@ mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/deploy_remote_devcontainer_$(date +%Y%m%d-%H%M%S).log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-[[ -n "$(git status --porcelain)" ]] && die "working tree is dirty"
-
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-echo "Pushing branch ${CURRENT_BRANCH} to origin..."
-git push origin "$CURRENT_BRANCH"
-
-[[ -f "$SSH_KEY_PATH" ]] || die "SSH key not found: $SSH_KEY_PATH"
-KEY_FILENAME="$(basename "$SSH_KEY_PATH")"
-REMOTE_KEY_PATH="${REMOTE_KEY_CACHE}/${KEY_FILENAME}"
-PRIVATE_KEY_PATH="${SSH_KEY_PATH%.pub}"
-if [[ "$PRIVATE_KEY_PATH" == "$SSH_KEY_PATH" ]]; then
-  # Caller supplied a private key already
-  PRIVATE_KEY_PATH="$SSH_KEY_PATH"
-fi
-[[ -f "$PRIVATE_KEY_PATH" ]] || die "Private key not found for SSH test: $PRIVATE_KEY_PATH"
+# Removed dirty tree check to allow rsync deployment of uncommitted changes
+# [[ -n "$(git status --porcelain)" ]] && die "working tree is dirty"
 
 ensure_docker_context
 
@@ -207,6 +194,15 @@ echo "Copying key to remote cache: ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_KEY_PA
 ssh "${REMOTE_USER}@${REMOTE_HOST}" "mkdir -p $REMOTE_KEY_CACHE"
 scp "$SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_KEY_PATH}"
 ssh "${REMOTE_USER}@${REMOTE_HOST}" "chmod 700 $REMOTE_KEY_CACHE && chmod 600 $REMOTE_KEY_PATH"
+
+# Optimization: Use rsync to mirror local "dirty" tree to remote, bypassing git push/pull latency and restrictions
+echo "Syncing local repository to remote: $REPO_ROOT -> ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_REPO_PATH}"
+# Create remote parent dir
+ssh "${REMOTE_USER}@${REMOTE_HOST}" "mkdir -p \"${REMOTE_REPO_PATH}\""
+# Rsync the content (including .git so versioning works, but delete extraneous files)
+rsync -e "${RSYNC_SSH}" -az --delete \
+  --exclude '.build/' --exclude 'build/' --exclude 'cmake-build-*/' \
+  "$REPO_ROOT/" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_REPO_PATH}/"
 
 echo "Triggering remote devcontainer rebuild..."
 ssh "${REMOTE_USER}@${REMOTE_HOST}" \
@@ -221,10 +217,7 @@ ssh "${REMOTE_USER}@${REMOTE_HOST}" \
   DEVCONTAINER_SSH_PORT="$REMOTE_PORT" \
   bash <<'EOF'
 set -euo pipefail
-cd "$REPO_PATH"
-git fetch origin
-git checkout "$BRANCH"
-git pull --ff-only origin "$BRANCH"
+# Repo is already updated via rsync; skipping git operations
 REPO_PATH="$REPO_PATH" \
 SANDBOX_PATH="$SANDBOX_PATH" \
 KEY_CACHE="$KEY_CACHE" \

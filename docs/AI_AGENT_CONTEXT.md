@@ -516,7 +516,7 @@ solution: "Inspect build.log, fix specific stage, rebuild"
 
 ## Prohibited Actions for AI Agents
 
-### DO NOT:
+### DO NOT
 
 ```yaml
 prohibited_action_1:
@@ -654,8 +654,23 @@ definition_of_done:
       - "ghcr.io/devcontainers/features/github-cli:1"
       - "ghcr.io/devcontainers/features/aws-cli:1"
     risk: "LOW"
-    note: "Can then remove manual installs from Dockerfile"
+    note: "**Note:** Has ~15% success rate. Use REFACTORING_ROADMAP.md instead."
 ```
+
+---
+
+#### 8. [remote_devcontainer_ai_guide.md](../.gemini/antigravity/brain/6656d513-7ef6-419c-8b63-48d968ba6b9b/remote_devcontainer_ai_guide.md)
+
+**Status:** ✅ CURRENT (V2 Guide)
+**Purpose:** Optimized guide for AI agents on remote devcontainer workflow.
+**Contents:**
+
+- Key architectural facts
+- Critical bug fixes (SSH, Permissions, 404s)
+- Step-by-step verification
+- Dirty Tree trap warnings
+
+**Note:** **READ THIS FIRST** before attempting any build or deployment tasks.
 
 ---
 

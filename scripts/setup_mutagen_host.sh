@@ -48,6 +48,14 @@ if [[ -z "$SSH_BIN" ]]; then
   exit 1
 fi
 
+# Backup existing configs if they exist to avoid destructive overwrite
+for file in "$SSH_CFG" "$YML" "$SSH_WRAPPER" "$SCP_WRAPPER"; do
+  if [[ -f "$file" ]]; then
+    echo "Backing up existing $file to ${file}.bak"
+    cp "$file" "${file}.bak"
+  fi
+done
+
 mkdir -p "$MUT_DIR"
 
 echo "[mutagen-setup] Writing SSH config: $SSH_CFG"

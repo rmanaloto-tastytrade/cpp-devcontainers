@@ -60,6 +60,15 @@ echo "[remote] Host capacity     : nproc=$(nproc) mem_total=$(awk 'NR==1{print $
 BUILD_META_DIR=${BUILD_META_DIR:-"$HOME/dev/devcontainers/build_meta"}
 mkdir -p "$BUILD_META_DIR"
 
+# Cleanup: Keep only the 20 most recent builds (approx 40 files: *manifest.json + *metadata.json)
+if [[ -d "$BUILD_META_DIR" ]]; then
+  # Sort newest first, drop everything after the 40 newest, delete the rest
+  mapfile -t meta_files < <(find "$BUILD_META_DIR" -maxdepth 1 -type f -name "*.json" -print0 | xargs -0 -r ls -1t 2>/dev/null)
+  if ((${#meta_files[@]} > 40)); then
+    printf '%s\0' "${meta_files[@]:40}" | xargs -0 -r rm -f 2>/dev/null || true
+  fi
+fi
+
 emit_bake_manifest() {
   local target="$1"
   local ts manifest metadata
