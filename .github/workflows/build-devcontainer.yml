@@ -17,6 +17,7 @@ env:
   TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
   EXPECTED_RUNNER_NAME: c0802s4-000
   EXPECTED_RUNNER_ALT: c0802s4
+  CACHE_DIR: /var/cache/docker-buildx
 
 jobs:
   build-ci-helper:
@@ -31,6 +32,11 @@ jobs:
       id-token: write
     timeout-minutes: 60
     steps:
+      - name: Ensure local cache dir
+        run: |
+          mkdir -p "${CACHE_DIR}"
+          chmod 777 "${CACHE_DIR}"
+
       - name: Runner guard
         run: |
           actual="$(hostname)"
@@ -72,8 +78,8 @@ jobs:
           set: |
             ci-helper.tags=${{ steps.meta-helper.outputs.tags }}
             ci-helper.labels=${{ steps.meta-helper.outputs.labels }}
-          cache-from: type=gha,scope=ci-helper-${{ github.ref_name }}
-          cache-to: type=gha,scope=ci-helper-${{ github.ref_name }},mode=max
+          cache-from: type=local,src=${{ env.CACHE_DIR }}/ci-helper
+          cache-to: type=local,dest=${{ env.CACHE_DIR }}/ci-helper,mode=max
 
       - name: Cleanup builder cache
         if: always()
@@ -104,6 +110,11 @@ jobs:
           - gcc15-clang22
           - gcc15-clangp2996
     steps:
+      - name: Ensure local cache dir
+        run: |
+          mkdir -p "${CACHE_DIR}"
+          chmod 777 "${CACHE_DIR}"
+
       - name: Runner guard
         run: |
           actual="$(hostname)"
@@ -157,8 +168,8 @@ jobs:
           targets: base
           load: true
           push: false
-          cache-from: type=gha,scope=base-${{ github.ref_name }}
-          cache-to: type=gha,scope=base-${{ github.ref_name }},mode=max
+          cache-from: type=local,src=${{ env.CACHE_DIR }}/base
+          cache-to: type=local,dest=${{ env.CACHE_DIR }}/base,mode=max
 
       - name: Build devcontainer (bake)
         uses: docker/bake-action@v6
@@ -166,12 +177,13 @@ jobs:
           files: .devcontainer/docker-bake.hcl
           targets: ${{ steps.map.outputs.target }}
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          # Always load locally so images are available on the runner even when pushed
+          load: true
           set: |
             ${{ steps.map.outputs.target }}.tags=${{ steps.meta-dev.outputs.tags }}
             ${{ steps.map.outputs.target }}.labels=${{ steps.meta-dev.outputs.labels }}
-          cache-from: type=gha,scope=devcontainer-${{ matrix.permutation }}-${{ github.ref_name }}
-          cache-to: type=gha,scope=devcontainer-${{ matrix.permutation }}-${{ github.ref_name }},mode=max
+          cache-from: type=local,src=${{ env.CACHE_DIR }}/devcontainer-${{ matrix.permutation }}
+          cache-to: type=local,dest=${{ env.CACHE_DIR }}/devcontainer-${{ matrix.permutation }},mode=max
 
       - name: Cleanup builder cache
         if: always()
