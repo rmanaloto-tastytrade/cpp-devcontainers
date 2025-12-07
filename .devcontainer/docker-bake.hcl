@@ -1,5 +1,9 @@
 variable "TAG" {
-  default = "cpp-cpp-devcontainer:local"
+  default = "ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/devcontainer:local"
+}
+
+variable "TAG_BASE" {
+  default = "ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/devcontainer"
 }
 
 variable "BASE_TAG" {
@@ -290,8 +294,8 @@ group "default" {
 target "devcontainer_gcc14_clang_qual" {
   inherits  = ["_base"]
   target    = "devcontainer"
-  dependsOn = ["tools_merge"]
-  tags      = ["cpp-cpp-devcontainer:gcc14-clang${CLANG_QUAL}"]
+  dependsOn = ["base", "tools_merge"]
+  tags      = ["${TAG_BASE}:gcc14-clang${CLANG_QUAL}"]
   args = {
     GCC_VERSION        = "14"
     CLANG_VARIANT      = "${CLANG_QUAL}"
@@ -304,8 +308,8 @@ target "devcontainer_gcc14_clang_qual" {
 target "devcontainer_gcc14_clang_dev" {
   inherits  = ["_base"]
   target    = "devcontainer"
-  dependsOn = ["tools_merge"]
-  tags      = ["cpp-cpp-devcontainer:gcc14-clang${CLANG_DEV}"]
+  dependsOn = ["base", "tools_merge"]
+  tags      = ["${TAG_BASE}:gcc14-clang${CLANG_DEV}"]
   args = {
     GCC_VERSION        = "14"
     CLANG_VARIANT      = "${CLANG_DEV}"
@@ -318,8 +322,8 @@ target "devcontainer_gcc14_clang_dev" {
 target "devcontainer_gcc14_clangp2996" {
   inherits  = ["_base"]
   target    = "devcontainer"
-  dependsOn = ["tools_merge"]
-  tags      = ["cpp-cpp-devcontainer:gcc14-clangp2996"]
+  dependsOn = ["base", "tools_merge"]
+  tags      = ["${TAG_BASE}:gcc14-clangp2996"]
   args = {
     GCC_VERSION        = "14"
     CLANG_VARIANT      = "p2996"
@@ -332,8 +336,8 @@ target "devcontainer_gcc14_clangp2996" {
 target "devcontainer_gcc15_clang_qual" {
   inherits  = ["_base"]
   target    = "devcontainer"
-  dependsOn = ["tools_merge"]
-  tags      = ["cpp-cpp-devcontainer:gcc15-clang${CLANG_QUAL}"]
+  dependsOn = ["base", "tools_merge"]
+  tags      = ["${TAG_BASE}:gcc15-clang${CLANG_QUAL}"]
   args = {
     GCC_VERSION        = "15"
     CLANG_VARIANT      = "${CLANG_QUAL}"
@@ -346,8 +350,8 @@ target "devcontainer_gcc15_clang_qual" {
 target "devcontainer_gcc15_clang_dev" {
   inherits  = ["_base"]
   target    = "devcontainer"
-  dependsOn = ["tools_merge"]
-  tags      = ["cpp-cpp-devcontainer:gcc15-clang${CLANG_DEV}"]
+  dependsOn = ["base", "tools_merge"]
+  tags      = ["${TAG_BASE}:gcc15-clang${CLANG_DEV}"]
   args = {
     GCC_VERSION        = "15"
     CLANG_VARIANT      = "${CLANG_DEV}"
@@ -360,8 +364,8 @@ target "devcontainer_gcc15_clang_dev" {
 target "devcontainer_gcc15_clangp2996" {
   inherits  = ["_base"]
   target    = "devcontainer"
-  dependsOn = ["tools_merge"]
-  tags      = ["cpp-cpp-devcontainer:gcc15-clangp2996"]
+  dependsOn = ["base", "tools_merge"]
+  tags      = ["${TAG_BASE}:gcc15-clangp2996"]
   args = {
     GCC_VERSION        = "15"
     CLANG_VARIANT      = "p2996"
@@ -373,6 +377,18 @@ target "devcontainer_gcc15_clangp2996" {
 
 group "matrix" {
   targets = [
+    "devcontainer_gcc14_clang_qual",
+    "devcontainer_gcc14_clang_dev",
+    "devcontainer_gcc14_clangp2996",
+    "devcontainer_gcc15_clang_qual",
+    "devcontainer_gcc15_clang_dev",
+    "devcontainer_gcc15_clangp2996",
+  ]
+}
+
+group "all" {
+  targets = [
+    "base",
     "devcontainer_gcc14_clang_qual",
     "devcontainer_gcc14_clang_dev",
     "devcontainer_gcc14_clangp2996",

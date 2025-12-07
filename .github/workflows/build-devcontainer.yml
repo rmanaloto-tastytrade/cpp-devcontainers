@@ -17,6 +17,10 @@ env:
   TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
   BASE_IMAGE_TAG: ghcr.io/${{ github.repository }}/cpp-dev-base:local
   BASE_CACHE_TAG: ghcr.io/${{ github.repository }}/cpp-dev-base:cache
+  SHORT_SHA: ${{ github.sha[0:7] }}
+  BUILD_TS: ${{ github.run_id }}-${{ github.run_attempt }}
+  GIT_TAG: ${{ github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/') && github.ref || '' }}
+  SUMMARY_JSON: devcontainer-summary.json
   EXPECTED_RUNNER_NAME: c0802s4-000
   EXPECTED_RUNNER_ALT: c0802s4
   CACHE_DIR: /var/cache/docker-buildx
@@ -220,14 +224,7 @@ jobs:
           workdir: ${{ github.workspace }}
           source: .
           files: .devcontainer/docker-bake.hcl
-          targets: |
-            base
-            devcontainer_gcc14_clang_qual
-            devcontainer_gcc14_clang_dev
-            devcontainer_gcc14_clangp2996
-            devcontainer_gcc15_clang_qual
-            devcontainer_gcc15_clang_dev
-            devcontainer_gcc15_clangp2996
+          targets: all
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           load: true
           pull: false
@@ -248,9 +245,70 @@ jobs:
             devcontainer_gcc15_clang_qual.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
             devcontainer_gcc15_clang_dev.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
             devcontainer_gcc15_clangp2996.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
+            devcontainer_gcc14_clang_qual.tags=${{ env.TAG_BASE }}:gcc14-clang21,${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }},${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}${{ env.GIT_TAG && format(',%s:%s-gcc14-clang21', env.TAG_BASE, env.GIT_TAG) || '' }}
+            devcontainer_gcc14_clang_dev.tags=${{ env.TAG_BASE }}:gcc14-clang22,${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }},${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}${{ env.GIT_TAG && format(',%s:%s-gcc14-clang22', env.TAG_BASE, env.GIT_TAG) || '' }}
+            devcontainer_gcc14_clangp2996.tags=${{ env.TAG_BASE }}:gcc14-clangp2996,${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }},${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}${{ env.GIT_TAG && format(',%s:%s-gcc14-clangp2996', env.TAG_BASE, env.GIT_TAG) || '' }}
+            devcontainer_gcc15_clang_qual.tags=${{ env.TAG_BASE }}:gcc15-clang21,${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }},${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}${{ env.GIT_TAG && format(',%s:%s-gcc15-clang21', env.TAG_BASE, env.GIT_TAG) || '' }}
+            devcontainer_gcc15_clang_dev.tags=${{ env.TAG_BASE }}:gcc15-clang22,${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }},${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}${{ env.GIT_TAG && format(',%s:%s-gcc15-clang22', env.TAG_BASE, env.GIT_TAG) || '' }}
+            devcontainer_gcc15_clangp2996.tags=${{ env.TAG_BASE }}:gcc15-clangp2996,${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }},${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}${{ env.GIT_TAG && format(',%s:%s-gcc15-clangp2996', env.TAG_BASE, env.GIT_TAG) || '' }}
 
       - name: Cleanup builder cache
         if: always()
         run: |
           docker builder prune -f --filter until=24h || true
           docker image prune -f --filter until=24h || true
+
+      - name: Generate summary JSON and CSV
+        if: always()
+        run: |
+          cat > "${SUMMARY_JSON}" <<'EOF'
+          {
+            "run_status": "${{ job.status }}",
+            "targets": [
+              {"name": "base", "status": "${{ job.status }}", "tags": ["${{ env.BASE_IMAGE_TAG }}"]},
+              {"name": "devcontainer_gcc14_clang_qual", "status": "${{ job.status }}", "tags": ["${{ env.TAG_BASE }}:gcc14-clang21", "${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }}", "${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}"]},
+              {"name": "devcontainer_gcc14_clang_dev", "status": "${{ job.status }}", "tags": ["${{ env.TAG_BASE }}:gcc14-clang22", "${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }}", "${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}"]},
+              {"name": "devcontainer_gcc14_clangp2996", "status": "${{ job.status }}", "tags": ["${{ env.TAG_BASE }}:gcc14-clangp2996", "${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }}", "${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}"]},
+              {"name": "devcontainer_gcc15_clang_qual", "status": "${{ job.status }}", "tags": ["${{ env.TAG_BASE }}:gcc15-clang21", "${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }}", "${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}"]},
+              {"name": "devcontainer_gcc15_clang_dev", "status": "${{ job.status }}", "tags": ["${{ env.TAG_BASE }}:gcc15-clang22", "${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }}", "${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}"]},
+              {"name": "devcontainer_gcc15_clangp2996", "status": "${{ job.status }}", "tags": ["${{ env.TAG_BASE }}:gcc15-clangp2996", "${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }}", "${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}"]}
+            ],
+            "ghcr_package": "https://github.com/${{ github.repository }}/pkgs/container/devcontainer"
+          }
+          EOF
+          # Emit CSV
+          jq -r '.targets[] | [.name, .status, (.tags | join(";"))] | @csv' "${SUMMARY_JSON}" > summary.csv
+
+      - name: Upload summary artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devcontainer-summary
+          path: |
+            ${{ env.SUMMARY_JSON }}
+            summary.csv
+
+      - name: Render summary table
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync(process.env.SUMMARY_JSON, 'utf8'));
+            let table = "| Target | Status | Tags |\n| --- | --- | --- |\n";
+            for (const t of data.targets) {
+              table += `| ${t.name} | ${t.status} | ${t.tags.join(', ')} |\n`;
+            }
+            const pkg = data.ghcr_package || '';
+            const tags = data.targets.flatMap(t => t.tags || []).join(', ');
+            core.summary
+              .addHeading('Devcontainer build')
+              .addTable([
+                [{data: 'Target', header: true}, {data: 'Status', header: true}, {data: 'Tags', header: true}],
+                ...data.targets.map(t => [t.name, t.status, t.tags.join(', ')])
+              ])
+              .addBreak()
+              .addRaw(`GHCR package: ${pkg}`)
+              .addBreak()
+              .addRaw(`All tags: ${tags}`)
+              .write();
