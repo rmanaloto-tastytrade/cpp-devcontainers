@@ -78,8 +78,6 @@ jobs:
           set: |
             ci-helper.tags=${{ steps.meta-helper.outputs.tags }}
             ci-helper.labels=${{ steps.meta-helper.outputs.labels }}
-          cache-from: type=local,src=${{ env.CACHE_DIR }}/ci-helper
-          cache-to: type=local,dest=${{ env.CACHE_DIR }}/ci-helper,mode=max
 
       - name: Cleanup builder cache
         if: always()
@@ -171,8 +169,6 @@ jobs:
           targets: base
           load: true
           push: false
-          cache-from: type=local,src=${{ env.CACHE_DIR }}/base
-          cache-to: type=local,dest=${{ env.CACHE_DIR }}/base,mode=max
 
       - name: Hadolint Dockerfile
         run: |
@@ -195,8 +191,6 @@ jobs:
           set: |
             ${{ steps.map.outputs.target }}.tags=${{ steps.meta-dev.outputs.tags }}
             ${{ steps.map.outputs.target }}.labels=${{ steps.meta-dev.outputs.labels }}
-          cache-from: type=local,src=${{ env.CACHE_DIR }}/devcontainer-${{ matrix.permutation }}
-          cache-to: type=local,dest=${{ env.CACHE_DIR }}/devcontainer-${{ matrix.permutation }},mode=max
 
       - name: SBOM (best-effort)
         if: always()

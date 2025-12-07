@@ -52,6 +52,10 @@ variable "ZSTD_ARCHIVE" {
   default = "zstd-v1.5.7-linux.tar.gz"
 }
 
+variable "CACHE_DIR" {
+  default = "/var/cache/docker-buildx"
+}
+
 target "ci-helper" {
   context    = "."
   dockerfile = ".github/ci/ci-runner.Dockerfile"
@@ -59,12 +63,16 @@ target "ci-helper" {
     "org.opencontainers.image.title"       = "CI Helper"
     "org.opencontainers.image.description" = "CI helper with Docker CLI/buildx, devcontainers CLI, hadolint"
   }
+  cache-from = ["type=local,src=${CACHE_DIR}/ci-helper"]
+  cache-to   = ["type=local,dest=${CACHE_DIR}/ci-helper,mode=max"]
 }
 
 target "_base" {
   context    = "."
   dockerfile = ".devcontainer/Dockerfile"
   platform   = [variable.PLATFORM]
+  cache-from = ["type=local,src=${CACHE_DIR}/devcontainer"]
+  cache-to   = ["type=local,dest=${CACHE_DIR}/devcontainer,mode=max"]
   args = {
     UBUNTU_VERSION     = "24.04"
     USERNAME           = "slotmap"
