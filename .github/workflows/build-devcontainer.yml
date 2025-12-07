@@ -116,7 +116,7 @@ jobs:
           docker image prune -f --filter until=24h || true
 
   build-devcontainers:
-    name: Build devcontainer matrix
+    name: Build devcontainers
     needs: build-ci-helper
     runs-on:
       - self-hosted
@@ -127,16 +127,6 @@ jobs:
       packages: write
       id-token: write
     timeout-minutes: 120
-    strategy:
-      fail-fast: false
-      matrix:
-        permutation:
-          - gcc14-clang21
-          - gcc14-clang22
-          - gcc14-clangp2996
-          - gcc15-clang21
-          - gcc15-clang22
-          - gcc15-clangp2996
     steps:
       - name: Derive cache dir from Docker root
         id: cachepath-dev
@@ -187,19 +177,6 @@ jobs:
       - name: Validate bake targets
         run: docker buildx bake --file .devcontainer/docker-bake.hcl --print
 
-      - name: Map permutation to bake target
-        id: map
-        run: |
-          case "${{ matrix.permutation }}" in
-            gcc14-clang21) echo "target=devcontainer_gcc14_clang_qual" >> $GITHUB_OUTPUT ;;
-            gcc14-clang22) echo "target=devcontainer_gcc14_clang_dev" >> $GITHUB_OUTPUT ;;
-            gcc14-clangp2996) echo "target=devcontainer_gcc14_clangp2996" >> $GITHUB_OUTPUT ;;
-            gcc15-clang21) echo "target=devcontainer_gcc15_clang_qual" >> $GITHUB_OUTPUT ;;
-            gcc15-clang22) echo "target=devcontainer_gcc15_clang_dev" >> $GITHUB_OUTPUT ;;
-            gcc15-clangp2996) echo "target=devcontainer_gcc15_clangp2996" >> $GITHUB_OUTPUT ;;
-            *) echo "Unknown permutation" >&2; exit 1 ;;
-          esac
-
       - name: Guard against docker.io fallback
         run: |
           case "${BASE_IMAGE_TAG}" in
@@ -220,95 +197,57 @@ jobs:
             echo "docker.io reference detected in base cache refs"
             exit 1
           fi
-          BASE_TAG=${{ env.BASE_IMAGE_TAG }} BASE_CACHE_TAG=${{ env.BASE_CACHE_TAG }} \
-            docker buildx bake --file .devcontainer/docker-bake.hcl --print ${{ steps.map.outputs.target }} > /tmp/bake-target.txt
-          if grep -Ei "docker\\.io|library/" /tmp/bake-target.txt; then
-            echo "docker.io reference detected in permutation bake plan"
-            exit 1
-          fi
-          if grep -Ei "cache-(from|to).*(docker\\.io|library/)" /tmp/bake-target.txt; then
-            echo "docker.io reference detected in permutation cache refs"
-            exit 1
-          fi
-          if ! grep -q "${{ env.BASE_IMAGE_TAG }}" /tmp/bake-target.txt; then
-            echo "Expected BASE_IMAGE ${BASE_IMAGE_TAG} not found in permutation plan"
-            exit 1
-          fi
+          for tgt in devcontainer_gcc14_clang_qual devcontainer_gcc14_clang_dev devcontainer_gcc14_clangp2996 devcontainer_gcc15_clang_qual devcontainer_gcc15_clang_dev devcontainer_gcc15_clangp2996; do
+            BASE_TAG=${{ env.BASE_IMAGE_TAG }} BASE_CACHE_TAG=${{ env.BASE_CACHE_TAG }} \
+              docker buildx bake --file .devcontainer/docker-bake.hcl --print "$tgt" > "/tmp/bake-${tgt}.txt"
+            if grep -Ei "docker\\.io|library/" "/tmp/bake-${tgt}.txt"; then
+              echo "docker.io reference detected in permutation bake plan ($tgt)"
+              exit 1
+            fi
+            if grep -Ei "cache-(from|to).*(docker\\.io|library/)" "/tmp/bake-${tgt}.txt"; then
+              echo "docker.io reference detected in permutation cache refs ($tgt)"
+              exit 1
+            fi
+            if ! grep -q "${{ env.BASE_IMAGE_TAG }}" "/tmp/bake-${tgt}.txt"; then
+              echo "Expected BASE_IMAGE ${BASE_IMAGE_TAG} not found in permutation plan ($tgt)"
+              exit 1
+            fi
+          done
 
-      - name: Metadata for devcontainer
-        id: meta-dev
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.TAG_BASE }}
-          bake-target: ${{ steps.map.outputs.target }}
-          tags: |
-            type=raw,value=${{ matrix.permutation }}
-            type=sha,format=short,prefix=${{ matrix.permutation }}-
-            type=raw,value=latest-${{ matrix.permutation }},enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-
-      - name: Persist devcontainer metadata bake file
-        run: cp "${{ steps.meta-dev.outputs.bake-file }}" meta-dev-bake.json
-
-      - name: Build base locally (no push)
+      - name: Build base and devcontainers (bake, single invocation)
         uses: docker/bake-action@v6
         with:
           workdir: ${{ github.workspace }}
           source: .
           files: .devcontainer/docker-bake.hcl
-          targets: base
+          targets: |
+            base
+            devcontainer_gcc14_clang_qual
+            devcontainer_gcc14_clang_dev
+            devcontainer_gcc14_clangp2996
+            devcontainer_gcc15_clang_qual
+            devcontainer_gcc15_clang_dev
+            devcontainer_gcc15_clangp2996
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           load: true
-          push: false
           pull: false
           set: |
             BASE_TAG=${{ env.BASE_IMAGE_TAG }}
             base.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
             base.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
             base.cache-to=type=registry,ref=${{ env.BASE_CACHE_TAG }},mode=max,compression=zstd,oci-mediatypes=true,force-compression=true
-
-      - name: Hadolint Dockerfile
-        run: |
-          docker run --rm -i \
-            -v "$PWD":/workspace -w /workspace \
-            ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/ci-helper:latest \
-            hadolint --failure-threshold error - < .devcontainer/Dockerfile
-
-      - name: Validate target
-        run: docker buildx bake --file .devcontainer/docker-bake.hcl --print ${{ steps.map.outputs.target }}
-
-      - name: Build devcontainer (bake)
-        uses: docker/bake-action@v6
-        with:
-          workdir: ${{ github.workspace }}
-          source: .
-          files: |
-            .devcontainer/docker-bake.hcl
-            meta-dev-bake.json
-          targets: ${{ steps.map.outputs.target }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          # Always load locally so images are available on the runner even when pushed
-          load: true
-          pull: false
-          set: |
-            BASE_TAG=${{ env.BASE_IMAGE_TAG }}
-            ${{ steps.map.outputs.target }}.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
-            ${{ steps.map.outputs.target }}.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
-
-      - name: SBOM (best-effort)
-        if: always()
-        run: |
-          primary_tag="${{ env.TAG_BASE }}:${{ matrix.permutation }}"
-          docker sbom "$primary_tag" > /tmp/sbom-${{ matrix.permutation }}.txt || true
-
-      - name: Summary
-        if: always()
-        run: |
-          {
-            echo "## Devcontainer build"
-            echo ""
-            echo "| Permutation | Status | Tags |"
-            echo "| --- | --- | --- |"
-            echo "| ${{ matrix.permutation }} | ${{ job.status }} | ${{ steps.meta-dev.outputs.tags }} |"
-          } >> "$GITHUB_STEP_SUMMARY"
+            devcontainer_gcc14_clang_qual.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
+            devcontainer_gcc14_clang_dev.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
+            devcontainer_gcc14_clangp2996.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
+            devcontainer_gcc15_clang_qual.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
+            devcontainer_gcc15_clang_dev.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
+            devcontainer_gcc15_clangp2996.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
+            devcontainer_gcc14_clang_qual.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
+            devcontainer_gcc14_clang_dev.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
+            devcontainer_gcc14_clangp2996.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
+            devcontainer_gcc15_clang_qual.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
+            devcontainer_gcc15_clang_dev.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
+            devcontainer_gcc15_clangp2996.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
 
       - name: Cleanup builder cache
         if: always()
