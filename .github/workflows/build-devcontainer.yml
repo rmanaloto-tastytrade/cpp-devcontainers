@@ -37,20 +37,29 @@ jobs:
       TAG_MAP_FILE: /tmp/devcontainer-tags.txt
       BUILDX_CACHE_DIR: /tmp/.buildx-cache
       BUILDX_CACHE_MODE: gha
+      CI_HELPER_IMAGE: ghcr.io/${{ github.repository }}/ci-helper:local
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Build CI helper image
+        run: docker build -t "$CI_HELPER_IMAGE" -f .github/ci/ci-runner.Dockerfile .
+
       - name: Lint Dockerfile (hadolint)
-        run: docker run --rm -i hadolint/hadolint@sha256:9259e253a4e299b50c92006149dd3a171c7ea3c5bd36f060022b5d2c1ff0fbbe hadolint --failure-threshold error - < .devcontainer/Dockerfile
+        run: |
+          docker run --rm -i \
+            -v "$PWD":/workspace -w /workspace \
+            "$CI_HELPER_IMAGE" \
+            bash -lc 'hadolint --failure-threshold error - < .devcontainer/Dockerfile'
 
       - name: Preflight devcontainer/bake validation
         run: |
-          ./scripts/check_docker_bake.sh
-          npm install -g @devcontainers/cli
-          devcontainer read-configuration --workspace-folder . >/tmp/devcontainer-config.json
-          ./scripts/check_devcontainer_config.sh
+          docker run --rm \
+            -v "$PWD":/workspace -w /workspace \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            "$CI_HELPER_IMAGE" \
+            bash -lc './scripts/check_docker_bake.sh && devcontainer read-configuration --workspace-folder . >/tmp/devcontainer-config.json && ./scripts/check_devcontainer_config.sh'
 
       - name: Runner guard
         run: |
@@ -87,7 +96,27 @@ jobs:
           BUILDX_CACHE_MODE: ${{ env.BUILDX_CACHE_MODE }}
           OUTPUT_TAR: /tmp/devcontainer-${{ matrix.permutation }}.tar
           MANIFEST_FILE: /tmp/manifest-${{ matrix.permutation }}.json
-        run: ./scripts/ci/build_devcontainers_ci.sh
+        run: |
+          mkdir -p /tmp/.buildx-cache
+          docker run --rm \
+            -v "$PWD":/workspace -w /workspace \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v /tmp:/tmp \
+            -e PERMUTATION \
+            -e PUSH_IMAGES \
+            -e PUBLISH_LATEST \
+            -e TAG_BASE \
+            -e TAG_MAP_FILE \
+            -e TAG_MAP_PERM \
+            -e EXPECTED_RUNNER_NAME \
+            -e EXPECTED_RUNNER_ALT \
+            -e RUNNER_NAME \
+            -e BUILDX_CACHE_DIR \
+            -e BUILDX_CACHE_MODE \
+            -e OUTPUT_TAR \
+            -e MANIFEST_FILE \
+            "$CI_HELPER_IMAGE" \
+            bash -lc './scripts/ci/build_devcontainers_ci.sh'
 
       - name: Upload tag map
         if: always()
