@@ -94,6 +94,7 @@ if [[ -n "${GITHUB_REPOSITORY:-}" ]]; then
   tag_base_default="ghcr.io/${GITHUB_REPOSITORY}/devcontainer"
 fi
 tag_base="${TAG_BASE:-$tag_base_default}"
+base_tag="${BASE_TAG:-cpp-cpp-dev-base:local}"
 
 push_images="${PUSH_IMAGES:-0}"
 pull_images="${PULL_IMAGES:-0}"
@@ -121,6 +122,15 @@ if [[ -n "${OUTPUT_TAR:-}" ]]; then
 fi
 
 echo "[validate] target=$validate_target"
+
+# Ensure base image is present locally (avoid docker.io pulls for local tags).
+echo "[base] building base image: ${base_tag}"
+docker buildx bake -f .devcontainer/docker-bake.hcl base \
+  --set base.tags="${base_tag}" \
+  --set base.output=type=docker \
+  "${cache_args[@]}" \
+  ${pull_flag:+$pull_flag}
+
 docker buildx bake -f .devcontainer/docker-bake.hcl "$validate_target" \
   --no-cache \
   "${cache_args[@]}" \
