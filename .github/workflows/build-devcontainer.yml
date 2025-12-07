@@ -244,7 +244,7 @@ jobs:
             extra_dirs = [p.name for p in images_dir.glob("devcontainer-image-*") if p.name.removeprefix("devcontainer-image-") not in expected]
             if extra_dirs:
                 raise SystemExit(f"Unexpected image artifacts present: {extra_dirs}")
-PY
+          PY
 
       - name: Load, verify, scan, and push
         run: |
@@ -253,20 +253,20 @@ PY
           manifest=/tmp/manifest-consolidated.jsonl
           map_file=/tmp/manifest-map.txt
           python3 - <<'PY' "$manifest" > "$map_file"
-import json, sys
-from pathlib import Path
-manifest = Path(sys.argv[1])
-count = 0
-for line in manifest.read_text().splitlines():
-    line = line.strip()
-    if not line:
-        continue
-    entry = json.loads(line)
-    count += 1
-    print(f"{entry.get('permutation')} {entry.get('image_id')}")
-if count == 0:
-    raise SystemExit("No manifest entries found")
-PY
+            import json, sys
+            from pathlib import Path
+            manifest = Path(sys.argv[1])
+            count = 0
+            for line in manifest.read_text().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                entry = json.loads(line)
+                count += 1
+                print(f"{entry.get('permutation')} {entry.get('image_id')}")
+            if count == 0:
+                raise SystemExit("No manifest entries found")
+          PY
           manifest_count=$(wc -l < "$map_file" | tr -d ' ')
           expected_count=${#expected[@]}
           if [ "$manifest_count" -ne "$expected_count" ]; then
