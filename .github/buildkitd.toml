@@ -1,0 +1,5 @@
+# Deny docker.io to avoid fallback pulls; allow GHCR by default
+[source-policy]
+  [[source-policy.rules]]
+    selector = ["registry:docker.io"]
+    onMatch = "reject"

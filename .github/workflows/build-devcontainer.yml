@@ -20,6 +20,7 @@ env:
   EXPECTED_RUNNER_NAME: c0802s4-000
   EXPECTED_RUNNER_ALT: c0802s4
   CACHE_DIR: /var/cache/docker-buildx
+  BUILDKIT_CONFIG: ${{ github.workspace }}/.github/buildkitd.toml
 
 jobs:
   build-ci-helper:
@@ -69,6 +70,10 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: image=ghcr.io/moby/buildkit:buildx-stable-1
+        with:
+          driver-opts: image=ghcr.io/moby/buildkit:buildx-stable-1
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -191,10 +196,28 @@ jobs:
 
       - name: Guard against docker.io fallback
         run: |
+          case "${BASE_IMAGE_TAG}" in
+            ghcr.io/*) ;;
+            *) echo "BASE_IMAGE_TAG must be ghcr.io/*, got ${BASE_IMAGE_TAG}"; exit 1 ;;
+          esac
+          case "${BASE_CACHE_TAG}" in
+            ghcr.io/*) ;;
+            *) echo "BASE_CACHE_TAG must be ghcr.io/*, got ${BASE_CACHE_TAG}"; exit 1 ;;
+          esac
           BASE_TAG=${{ env.BASE_IMAGE_TAG }} BASE_CACHE_TAG=${{ env.BASE_CACHE_TAG }} \
             docker buildx bake --file .devcontainer/docker-bake.hcl --print base > /tmp/bake-print.txt
           if grep -i "docker.io" /tmp/bake-print.txt; then
             echo "docker.io reference detected in bake plan"
+            exit 1
+          fi
+          BASE_TAG=${{ env.BASE_IMAGE_TAG }} BASE_CACHE_TAG=${{ env.BASE_CACHE_TAG }} \
+            docker buildx bake --file .devcontainer/docker-bake.hcl --print ${{ steps.map.outputs.target }} > /tmp/bake-target.txt
+          if grep -i "docker.io" /tmp/bake-target.txt; then
+            echo "docker.io reference detected in permutation bake plan"
+            exit 1
+          fi
+          if ! grep -q "${{ env.BASE_IMAGE_TAG }}" /tmp/bake-target.txt; then
+            echo "Expected BASE_IMAGE ${BASE_IMAGE_TAG} not found in permutation plan"
             exit 1
           fi
 
