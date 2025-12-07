@@ -32,10 +32,13 @@ jobs:
       id-token: write
     timeout-minutes: 60
     steps:
-      - name: Ensure local cache dir
+      - name: Derive cache dir from Docker root
+        id: cachepath-helper
         run: |
-          mkdir -p "${CACHE_DIR}"
-          chmod 777 "${CACHE_DIR}"
+          root="$(docker info --format '{{.DockerRootDir}}')"
+          echo "CACHE_DIR=${root}/buildx-cache" >> "$GITHUB_ENV"
+          mkdir -p "${root}/buildx-cache"
+          chmod 777 "${root}/buildx-cache"
 
       - name: Runner guard
         run: |
@@ -108,10 +111,13 @@ jobs:
           - gcc15-clang22
           - gcc15-clangp2996
     steps:
-      - name: Ensure local cache dir
+      - name: Derive cache dir from Docker root
+        id: cachepath-dev
         run: |
-          mkdir -p "${CACHE_DIR}"
-          chmod 777 "${CACHE_DIR}"
+          root="$(docker info --format '{{.DockerRootDir}}')"
+          echo "CACHE_DIR=${root}/buildx-cache" >> "$GITHUB_ENV"
+          mkdir -p "${root}/buildx-cache"
+          chmod 777 "${root}/buildx-cache"
 
       - name: Runner guard
         run: |
