@@ -128,6 +128,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate bake targets
+        run: docker buildx bake --file .devcontainer/docker-bake.hcl --print
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -171,6 +174,16 @@ jobs:
           cache-from: type=local,src=${{ env.CACHE_DIR }}/base
           cache-to: type=local,dest=${{ env.CACHE_DIR }}/base,mode=max
 
+      - name: Hadolint Dockerfile
+        run: |
+          docker run --rm -i \
+            -v "$PWD":/workspace -w /workspace \
+            ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/ci-helper:latest \
+            hadolint --failure-threshold error - < .devcontainer/Dockerfile
+
+      - name: Validate target
+        run: docker buildx bake --file .devcontainer/docker-bake.hcl --print ${{ steps.map.outputs.target }}
+
       - name: Build devcontainer (bake)
         uses: docker/bake-action@v6
         with:
@@ -184,6 +197,23 @@ jobs:
             ${{ steps.map.outputs.target }}.labels=${{ steps.meta-dev.outputs.labels }}
           cache-from: type=local,src=${{ env.CACHE_DIR }}/devcontainer-${{ matrix.permutation }}
           cache-to: type=local,dest=${{ env.CACHE_DIR }}/devcontainer-${{ matrix.permutation }},mode=max
+
+      - name: SBOM (best-effort)
+        if: always()
+        run: |
+          primary_tag="${{ env.TAG_BASE }}:${{ matrix.permutation }}"
+          docker sbom "$primary_tag" > /tmp/sbom-${{ matrix.permutation }}.txt || true
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Devcontainer build"
+            echo ""
+            echo "| Permutation | Status | Tags |"
+            echo "| --- | --- | --- |"
+            echo "| ${{ matrix.permutation }} | ${{ job.status }} | ${{ steps.meta-dev.outputs.tags }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Cleanup builder cache
         if: always()

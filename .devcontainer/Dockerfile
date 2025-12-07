@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 ARG UBUNTU_VERSION=24.04
-ARG UBUNTU_IMAGE=ubuntu:24.04@sha256:4fdf0125919d24aec972544669dcd7d6a26a8ad7e6561c73d5549bd6db258ac2
+ARG UBUNTU_IMAGE=mcr.microsoft.com/ubuntu:24.04
 ARG DEBIAN_FRONTEND=noninteractive
 ARG USERNAME=${LOCAL_USER:-"devuser"}
 ARG USER_UID=1000
