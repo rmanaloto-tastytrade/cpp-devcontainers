@@ -92,6 +92,7 @@ jobs:
         uses: docker/bake-action@v6
         with:
           workdir: ${{ github.workspace }}
+          source: .
           files: |
             .devcontainer/docker-bake.hcl
             meta-helper-bake.json
@@ -204,6 +205,7 @@ jobs:
         uses: docker/bake-action@v6
         with:
           workdir: ${{ github.workspace }}
+          source: .
           files: .devcontainer/docker-bake.hcl
           targets: base
           load: true
@@ -223,6 +225,7 @@ jobs:
         uses: docker/bake-action@v6
         with:
           workdir: ${{ github.workspace }}
+          source: .
           files: |
             .devcontainer/docker-bake.hcl
             meta-dev-bake.json
