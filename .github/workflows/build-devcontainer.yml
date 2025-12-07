@@ -20,7 +20,6 @@ env:
   EXPECTED_RUNNER_NAME: c0802s4-000
   EXPECTED_RUNNER_ALT: c0802s4
   CACHE_DIR: /var/cache/docker-buildx
-  BUILDKIT_CONFIG: ${{ github.workspace }}/.github/buildkitd.toml
 
 jobs:
   build-ci-helper:
@@ -73,7 +72,6 @@ jobs:
         with:
           driver-opts: |
             image=ghcr.io/moby/buildkit:buildx-stable-1
-            config=${{ github.workspace }}/.github/buildkitd.toml
 
       - name: Pre-pull buildkit/frontend images
         run: |
@@ -181,7 +179,6 @@ jobs:
         with:
           driver-opts: |
             image=ghcr.io/moby/buildkit:buildx-stable-1
-            config=${{ github.workspace }}/.github/buildkitd.toml
 
       - name: Login to GHCR
         uses: docker/login-action@v3
