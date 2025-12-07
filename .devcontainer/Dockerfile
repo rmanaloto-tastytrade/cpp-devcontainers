@@ -46,7 +46,6 @@ ARG JQ_SHA256=020468de7539ce70ef1bceaf7cde2e8c4f2ca6c3afb84642aabc5c97d9fc2a0d
 ARG AWSCLI_VERSION=latest
 ARG EGET_VERSION=v1.3.4
 ARG MUTAGEN_VERSION=v0.18.1
-ARG BASE_IMAGE=ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/cpp-dev-base:local
 ARG ENABLE_VALGRIND=1
 ARG ENABLE_CPPCHECK=1
 ARG ENABLE_IWYU=1
@@ -263,7 +262,7 @@ RUN set -e; \
 
 # ---------- Parallel builders (FROM base) ----------
 
-FROM ${BASE_IMAGE} AS prebuilt_base
+FROM base AS prebuilt_base
 
 FROM prebuilt_base AS clang_p2996
 ARG CLANG_P2996_BRANCH

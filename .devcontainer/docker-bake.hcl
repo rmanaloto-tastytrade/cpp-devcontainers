@@ -94,7 +94,6 @@ target "_base" {
     USERNAME           = "slotmap"
     USER_UID           = "1000"
     USER_GID           = "1000"
-    BASE_IMAGE         = "${BASE_TAG}"
     VCPKG_ROOT         = "/opt/vcpkg"
     VCPKG_DOWNLOADS    = "/opt/vcpkg/downloads"
     MRDOCS_VERSION     = "v0.8.0"
