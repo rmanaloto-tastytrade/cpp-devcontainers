@@ -1,5 +1,3 @@
-# syntax=ghcr.io/docker/dockerfile:1.7
-
 ARG UBUNTU_VERSION=24.04
 ARG UBUNTU_IMAGE=mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 ARG DEBIAN_FRONTEND=noninteractive
