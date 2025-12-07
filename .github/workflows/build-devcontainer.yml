@@ -236,7 +236,6 @@ jobs:
           load: true
           pull: false
           set: |
-            *.BASE_TAG=${{ env.BASE_IMAGE_TAG }}
             base.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
             base.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
             base.cache-to=type=registry,ref=${{ env.BASE_CACHE_TAG }},mode=max,compression=zstd,oci-mediatypes=true,force-compression=true
