@@ -8,6 +8,10 @@ on:
       - ".github/workflows/publish-ci-helper.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-and-push:
     name: build-and-push
@@ -17,7 +21,7 @@ jobs:
       - c0802s4
     timeout-minutes: 60
     env:
-      CI_HELPER_IMAGE: ghcr.io/${{ github.repository }}/ci-helper
+      CI_HELPER_IMAGE: ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/ci-helper
       EXPECTED_RUNNER_NAME: c0802s4-000
       EXPECTED_RUNNER_ALT: c0802s4
     concurrency:

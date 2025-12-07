@@ -37,7 +37,7 @@ jobs:
       TAG_MAP_FILE: /tmp/devcontainer-tags.txt
       BUILDX_CACHE_DIR: /tmp/.buildx-cache
       BUILDX_CACHE_MODE: gha
-      CI_HELPER_IMAGE: ghcr.io/${{ github.repository }}/ci-helper:latest
+      CI_HELPER_IMAGE: ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/ci-helper:latest
 
     steps:
       - name: Checkout
