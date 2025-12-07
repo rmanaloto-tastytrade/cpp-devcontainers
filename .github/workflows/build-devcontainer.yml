@@ -193,57 +193,57 @@ jobs:
           : > "$tag_out"
           : > "$man_out"
           python3 - <<'PY' "${expected[@]}"
-import json
-import sys
-from pathlib import Path
+            import json
+            import sys
+            from pathlib import Path
 
-expected = sys.argv[1:]
-images_dir = Path("/tmp/images")
-tagmaps_dir = Path("/tmp/tagmaps")
-manifests_dir = Path("/tmp/manifests")
-tag_out = Path("/tmp/tag-map-consolidated.txt")
-man_out = Path("/tmp/manifest-consolidated.jsonl")
+            expected = sys.argv[1:]
+            images_dir = Path("/tmp/images")
+            tagmaps_dir = Path("/tmp/tagmaps")
+            manifests_dir = Path("/tmp/manifests")
+            tag_out = Path("/tmp/tag-map-consolidated.txt")
+            man_out = Path("/tmp/manifest-consolidated.jsonl")
 
-seen = set()
-for perm in expected:
-    tar_dir = images_dir / f"devcontainer-image-{perm}"
-    tars = sorted(tar_dir.glob("*.tar"))
-    if len(tars) != 1:
-        raise SystemExit(f"Tarball missing or ambiguous for {perm}: {tars}")
+            seen = set()
+            for perm in expected:
+                tar_dir = images_dir / f"devcontainer-image-{perm}"
+                tars = sorted(tar_dir.glob("*.tar"))
+                if len(tars) != 1:
+                    raise SystemExit(f"Tarball missing or ambiguous for {perm}: {tars}")
 
-    tag_file = tagmaps_dir / f"tag-permutation-{perm}" / f"tag-{perm}.txt"
-    if not tag_file.is_file():
-        raise SystemExit(f"Tag map missing for {perm}: {tag_file}")
+                tag_file = tagmaps_dir / f"tag-permutation-{perm}" / f"tag-{perm}.txt"
+                if not tag_file.is_file():
+                    raise SystemExit(f"Tag map missing for {perm}: {tag_file}")
 
-    manifest_file = manifests_dir / f"manifest-{perm}" / f"manifest-{perm}.json"
-    if not manifest_file.is_file():
-        raise SystemExit(f"Manifest missing for {perm}: {manifest_file}")
+                manifest_file = manifests_dir / f"manifest-{perm}" / f"manifest-{perm}.json"
+                if not manifest_file.is_file():
+                    raise SystemExit(f"Manifest missing for {perm}: {manifest_file}")
 
-    entries = []
-    for line in manifest_file.read_text().splitlines():
-        line = line.strip()
-        if line:
-            entries.append(json.loads(line))
-    if len(entries) != 1:
-        raise SystemExit(f"Manifest for {perm} must have exactly one entry, got {len(entries)}")
+                entries = []
+                for line in manifest_file.read_text().splitlines():
+                    line = line.strip()
+                    if line:
+                        entries.append(json.loads(line))
+                if len(entries) != 1:
+                    raise SystemExit(f"Manifest for {perm} must have exactly one entry, got {len(entries)}")
 
-    entry = entries[0]
-    if entry.get("permutation") != perm:
-        raise SystemExit(f"Manifest permutation mismatch for {perm}: {entry.get('permutation')}")
-    if not entry.get("image_id"):
-        raise SystemExit(f"Manifest missing image_id for {perm}")
-    if perm in seen:
-        raise SystemExit(f"Duplicate manifest entry for {perm}")
-    seen.add(perm)
+                entry = entries[0]
+                if entry.get("permutation") != perm:
+                    raise SystemExit(f"Manifest permutation mismatch for {perm}: {entry.get('permutation')}")
+                if not entry.get("image_id"):
+                    raise SystemExit(f"Manifest missing image_id for {perm}")
+                if perm in seen:
+                    raise SystemExit(f"Duplicate manifest entry for {perm}")
+                seen.add(perm)
 
-    with tag_out.open("a", encoding="utf-8") as fh:
-        fh.write(tag_file.read_text())
-    with man_out.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(entry) + "\n")
+                with tag_out.open("a", encoding="utf-8") as fh:
+                    fh.write(tag_file.read_text())
+                with man_out.open("a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(entry) + "\n")
 
-extra_dirs = [p.name for p in images_dir.glob("devcontainer-image-*") if p.name.removeprefix("devcontainer-image-") not in expected]
-if extra_dirs:
-    raise SystemExit(f"Unexpected image artifacts present: {extra_dirs}")
+            extra_dirs = [p.name for p in images_dir.glob("devcontainer-image-*") if p.name.removeprefix("devcontainer-image-") not in expected]
+            if extra_dirs:
+                raise SystemExit(f"Unexpected image artifacts present: {extra_dirs}")
 PY
 
       - name: Load, verify, scan, and push
