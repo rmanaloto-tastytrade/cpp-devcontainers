@@ -15,6 +15,7 @@ env:
   DOCKER_BUILDKIT: 1
   BUILDX_NO_DEFAULT_LOAD: 1
   TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
+  BASE_IMAGE_TAG: ghcr.io/${{ github.repository }}/cpp-dev-base:local
   EXPECTED_RUNNER_NAME: c0802s4-000
   EXPECTED_RUNNER_ALT: c0802s4
   CACHE_DIR: /var/cache/docker-buildx
@@ -187,6 +188,14 @@ jobs:
             *) echo "Unknown permutation" >&2; exit 1 ;;
           esac
 
+      - name: Guard against docker.io fallback
+        run: |
+          docker buildx bake --file .devcontainer/docker-bake.hcl --set BASE_TAG=${{ env.BASE_IMAGE_TAG }} --print base > /tmp/bake-print.txt
+          if grep -i "docker.io" /tmp/bake-print.txt; then
+            echo "docker.io reference detected in bake plan"
+            exit 1
+          fi
+
       - name: Metadata for devcontainer
         id: meta-dev
         uses: docker/metadata-action@v5
@@ -210,6 +219,10 @@ jobs:
           targets: base
           load: true
           push: false
+          pull: false
+          set: |
+            BASE_TAG=${{ env.BASE_IMAGE_TAG }}
+            base.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
 
       - name: Hadolint Dockerfile
         run: |
@@ -233,6 +246,10 @@ jobs:
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           # Always load locally so images are available on the runner even when pushed
           load: true
+          pull: false
+          set: |
+            BASE_TAG=${{ env.BASE_IMAGE_TAG }}
+            ${{ steps.map.outputs.target }}.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
 
       - name: SBOM (best-effort)
         if: always()
