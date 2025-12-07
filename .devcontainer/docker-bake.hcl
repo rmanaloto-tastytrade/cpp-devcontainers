@@ -52,6 +52,15 @@ variable "ZSTD_ARCHIVE" {
   default = "zstd-v1.5.7-linux.tar.gz"
 }
 
+target "ci-helper" {
+  context    = "."
+  dockerfile = ".github/ci/ci-runner.Dockerfile"
+  labels = {
+    "org.opencontainers.image.title"       = "CI Helper"
+    "org.opencontainers.image.description" = "CI helper with Docker CLI/buildx, devcontainers CLI, hadolint"
+  }
+}
+
 target "_base" {
   context    = "."
   dockerfile = ".devcontainer/Dockerfile"

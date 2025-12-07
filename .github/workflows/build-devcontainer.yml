@@ -1,4 +1,4 @@
-name: Build Devcontainer Images (self-hosted)
+name: Build Devcontainers (Docker Bake)
 
 on:
   push:
@@ -7,64 +7,30 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+concurrency:
+  group: devcontainers-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  DOCKER_BUILDKIT: 1
+  BUILDX_NO_DEFAULT_LOAD: 1
+  TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
+  EXPECTED_RUNNER_NAME: c0802s4-000
+  EXPECTED_RUNNER_ALT: c0802s4
+
 jobs:
-  build:
-    name: build-${{ matrix.permutation }}
+  build-ci-helper:
+    name: Build CI helper image
     runs-on:
       - self-hosted
       - devcontainer-builder
       - c0802s4
-    timeout-minutes: 120
-    concurrency:
-      group: devcontainer-${{ github.ref }}-build-${{ matrix.permutation }}
-      cancel-in-progress: true
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-
-    strategy:
-      fail-fast: false
-      matrix:
-        permutation:
-          - gcc14-clang21
-          - gcc14-clang22
-          - gcc14-clangp2996
-          - gcc15-clang21
-          - gcc15-clang22
-          - gcc15-clangp2996
-    env:
-      TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
-      EXPECTED_RUNNER_NAME: c0802s4-000
-      EXPECTED_RUNNER_ALT: c0802s4
-      TAG_MAP_FILE: /tmp/devcontainer-tags.txt
-      BUILDX_CACHE_DIR: /tmp/.buildx-cache
-      BUILDX_CACHE_MODE: gha
-      CI_HELPER_IMAGE: ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/ci-helper:latest
-
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    timeout-minutes: 60
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Ensure CI helper image
-        run: |
-          if ! docker pull "$CI_HELPER_IMAGE"; then
-            echo "Helper image not found in registry; building locally..."
-            docker build -t "$CI_HELPER_IMAGE" -f .github/ci/ci-runner.Dockerfile .
-          fi
-
-      - name: Lint Dockerfile (hadolint)
-        run: |
-          docker run --rm -i \
-            -v "$PWD":/workspace -w /workspace \
-            "$CI_HELPER_IMAGE" \
-            bash -lc 'hadolint --failure-threshold error - < .devcontainer/Dockerfile'
-
-      - name: Preflight devcontainer/bake validation
-        run: |
-          docker run --rm \
-            -v "$PWD":/workspace -w /workspace \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            "$CI_HELPER_IMAGE" \
-            bash -lc './scripts/check_docker_bake.sh && devcontainer read-configuration --workspace-folder . >/tmp/devcontainer-config.json && ./scripts/check_devcontainer_config.sh'
-
       - name: Runner guard
         run: |
           actual="$(hostname)"
@@ -75,127 +41,84 @@ jobs:
             exit 1
           fi
 
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build permutation (no push)
-        env:
-          PERMUTATION: ${{ matrix.permutation }}
-          PUSH_IMAGES: 0
-          PUBLISH_LATEST: 0
-          TAG_BASE: ${{ env.TAG_BASE }}
-          TAG_MAP_FILE: ${{ env.TAG_MAP_FILE }}
-          TAG_MAP_PERM: /tmp/tag-${{ matrix.permutation }}.txt
-          EXPECTED_RUNNER_NAME: ${{ env.EXPECTED_RUNNER_NAME }}
-          RUNNER_NAME: ${{ env.RUNNER_NAME }}
-          BUILDX_CACHE_DIR: ${{ env.BUILDX_CACHE_DIR }}
-          BUILDX_CACHE_MODE: ${{ env.BUILDX_CACHE_MODE }}
-          OUTPUT_TAR: /tmp/devcontainer-${{ matrix.permutation }}.tar
-          MANIFEST_FILE: /tmp/manifest-${{ matrix.permutation }}.json
-        run: |
-          mkdir -p /tmp/.buildx-cache
-          docker run --rm \
-            -v "$PWD":/workspace -w /workspace \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v /tmp:/tmp \
-            -e PERMUTATION \
-            -e PUSH_IMAGES \
-            -e PUBLISH_LATEST \
-            -e TAG_BASE \
-            -e TAG_MAP_FILE \
-            -e TAG_MAP_PERM \
-            -e EXPECTED_RUNNER_NAME \
-            -e EXPECTED_RUNNER_ALT \
-            -e RUNNER_NAME \
-            -e BUILDX_CACHE_DIR \
-            -e BUILDX_CACHE_MODE \
-            -e OUTPUT_TAR \
-            -e MANIFEST_FILE \
-            "$CI_HELPER_IMAGE" \
-            bash -lc './scripts/ci/build_devcontainers_ci.sh'
-
-      - name: Upload tag map
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Metadata for helper
+        id: meta-helper
+        uses: docker/metadata-action@v5
         with:
-          name: devcontainer-tags-${{ matrix.permutation }}
-          path: ${{ env.TAG_MAP_FILE }}
-          retention-days: 7
+          images: ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/ci-helper
+          tags: |
+            type=sha,format=short
+            type=raw,value=latest
 
-      - name: Upload image tar
-        uses: actions/upload-artifact@v4
+      - name: Build & push helper (bake)
+        uses: docker/bake-action@v6
         with:
-          name: devcontainer-image-${{ matrix.permutation }}
-          path: /tmp/devcontainer-${{ matrix.permutation }}.tar
-          retention-days: 3
+          files: .devcontainer/docker-bake.hcl
+          targets: ci-helper
+          push: true
+          set: |
+            ci-helper.tags=${{ steps.meta-helper.outputs.tags }}
+            ci-helper.labels=${{ steps.meta-helper.outputs.labels }}
+          cache-from: type=gha,scope=ci-helper-${{ github.ref_name }}
+          cache-to: type=gha,scope=ci-helper-${{ github.ref_name }},mode=max
 
-      - name: Upload per-permutation tag map
-        uses: actions/upload-artifact@v4
-        with:
-          name: tag-permutation-${{ matrix.permutation }}
-          path: /tmp/tag-${{ matrix.permutation }}.txt
-          retention-days: 3
-
-      - name: Upload manifest
-        uses: actions/upload-artifact@v4
-        with:
-          name: manifest-${{ matrix.permutation }}
-          path: /tmp/manifest-${{ matrix.permutation }}.json
-          retention-days: 3
-
-      - name: Cleanup build artifacts
+      - name: Cleanup builder cache
         if: always()
         run: |
-          rm -f /tmp/devcontainer-${{ matrix.permutation }}.tar /tmp/tag-${{ matrix.permutation }}.txt /tmp/manifest-${{ matrix.permutation }}.json || true
+          docker builder prune -f --filter until=24h || true
+          docker image prune -f --filter until=24h || true
 
-      - name: Cleanup runner (build job)
-        if: always()
-        run: |
-          docker image prune -af || true
-          docker builder prune -af || true
-          rm -rf /tmp/.buildx-cache* || true
-
-  publish:
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    name: publish
+  build-devcontainers:
+    name: Build devcontainer matrix
+    needs: build-ci-helper
     runs-on:
       - self-hosted
       - devcontainer-builder
-      - c0802s4-000
+      - c0802s4
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     timeout-minutes: 120
-    env:
-      TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
-      EXPECTED_RUNNER_NAME: c0802s4-000
-    concurrency:
-      group: devcontainer-${{ github.ref }}-publish
-      cancel-in-progress: true
+    strategy:
+      fail-fast: false
+      matrix:
+        permutation:
+          - gcc14-clang21
+          - gcc14-clang22
+          - gcc14-clangp2996
+          - gcc15-clang21
+          - gcc15-clang22
+          - gcc15-clangp2996
     steps:
       - name: Runner guard
         run: |
-          if [ -n "${EXPECTED_RUNNER_NAME}" ]; then
-            actual="$(hostname)"
-            if [ "$actual" != "$EXPECTED_RUNNER_NAME" ]; then
-              echo "Runner guard failed: expected ${EXPECTED_RUNNER_NAME}, got ${actual}"
-              exit 1
-            fi
+          actual="$(hostname)"
+          expected="${EXPECTED_RUNNER_NAME:-}"
+          alt="${EXPECTED_RUNNER_ALT:-}"
+          if [ -n "$expected" ] && [ "$actual" != "$expected" ] && { [ -z "$alt" ] || [ "$actual" != "$alt" ]; }; then
+            echo "Runner guard failed: expected ${expected}${alt:+ or ${alt}}, got ${actual}"
+            exit 1
           fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Cleanup before publish
-        run: |
-          docker image prune -af || true
-          docker builder prune -af || true
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -204,101 +127,54 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download images
-        uses: actions/download-artifact@v4
+      - name: Metadata for devcontainer
+        id: meta-dev
+        uses: docker/metadata-action@v5
         with:
-          path: /tmp/images
-          pattern: devcontainer-image-*
+          images: ${{ env.TAG_BASE }}
+          tags: |
+            type=raw,value=${{ matrix.permutation }}
+            type=sha,format=short,prefix=${{ matrix.permutation }}-
+            type=raw,value=latest-${{ matrix.permutation }},enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
-      - name: Download tag maps
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp/tagmaps
-          pattern: tag-permutation-*
-
-      - name: Download manifests
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp/manifests
-          pattern: manifest-*
-
-      - name: Validate artifacts and consolidate manifests/tag maps
+      - name: Map permutation to bake target
+        id: map
         run: |
-          set -euo pipefail
-          expected=(gcc14-clang21 gcc14-clang22 gcc14-clangp2996 gcc15-clang21 gcc15-clang22 gcc15-clangp2996)
-          tag_out=/tmp/tag-map-consolidated.txt
-          man_out=/tmp/manifest-consolidated.jsonl
-          : > "$tag_out"
-          : > "$man_out"
-          python3 -c $'import json, sys\\nfrom pathlib import Path\\nexpected=sys.argv[1:]\\nimages_dir=Path(\"/tmp/images\")\\ntagmaps_dir=Path(\"/tmp/tagmaps\")\\nmanifests_dir=Path(\"/tmp/manifests\")\\ntag_out=Path(\"/tmp/tag-map-consolidated.txt\")\\nman_out=Path(\"/tmp/manifest-consolidated.jsonl\")\\nseen=set()\\nfor perm in expected:\\n    tar_dir=images_dir/f\"devcontainer-image-{perm}\"\\n    tars=sorted(tar_dir.glob(\"*.tar\"))\\n    if len(tars)!=1: raise SystemExit(f\"Tarball missing or ambiguous for {perm}: {tars}\")\\n    tag_file=tagmaps_dir/f\"tag-permutation-{perm}\"/f\"tag-{perm}.txt\"\\n    if not tag_file.is_file(): raise SystemExit(f\"Tag map missing for {perm}: {tag_file}\")\\n    manifest_file=manifests_dir/f\"manifest-{perm}\"/f\"manifest-{perm}.json\"\\n    if not manifest_file.is_file(): raise SystemExit(f\"Manifest missing for {perm}: {manifest_file}\")\\n    entries=[json.loads(line.strip()) for line in manifest_file.read_text().splitlines() if line.strip()]\\n    if len(entries)!=1: raise SystemExit(f\"Manifest for {perm} must have exactly one entry, got {len(entries)}\")\\n    entry=entries[0]\\n    if entry.get(\"permutation\")!=perm: raise SystemExit(f\"Manifest permutation mismatch for {perm}: {entry.get('permutation')}\")\\n    if not entry.get(\"image_id\"): raise SystemExit(f\"Manifest missing image_id for {perm}\")\\n    if perm in seen: raise SystemExit(f\"Duplicate manifest entry for {perm}\")\\n    seen.add(perm)\\n    tag_out.open(\"a\",encoding=\"utf-8\").write(tag_file.read_text())\\n    man_out.open(\"a\",encoding=\"utf-8\").write(json.dumps(entry)+\"\\\\n\")\\nextra=[p.name for p in images_dir.glob(\"devcontainer-image-*\") if p.name.removeprefix(\"devcontainer-image-\") not in expected]\\nif extra: raise SystemExit(f\"Unexpected image artifacts present: {extra}\")' \"${expected[@]}\"'
+          case "${{ matrix.permutation }}" in
+            gcc14-clang21) echo "target=devcontainer_gcc14_clang_qual" >> $GITHUB_OUTPUT ;;
+            gcc14-clang22) echo "target=devcontainer_gcc14_clang_dev" >> $GITHUB_OUTPUT ;;
+            gcc14-clangp2996) echo "target=devcontainer_gcc14_clangp2996" >> $GITHUB_OUTPUT ;;
+            gcc15-clang21) echo "target=devcontainer_gcc15_clang_qual" >> $GITHUB_OUTPUT ;;
+            gcc15-clang22) echo "target=devcontainer_gcc15_clang_dev" >> $GITHUB_OUTPUT ;;
+            gcc15-clangp2996) echo "target=devcontainer_gcc15_clangp2996" >> $GITHUB_OUTPUT ;;
+            *) echo "Unknown permutation" >&2; exit 1 ;;
+          esac
 
-      - name: Load, verify, scan, and push
-        run: |
-          set -euo pipefail
-          expected=(gcc14-clang21 gcc14-clang22 gcc14-clangp2996 gcc15-clang21 gcc15-clang22 gcc15-clangp2996)
-          manifest=/tmp/manifest-consolidated.jsonl
-          map_file=/tmp/manifest-map.txt
-          python3 -c $'import json, sys\\nfrom pathlib import Path\\nmanifest=Path(sys.argv[1])\\ncount=0\\nfor line in manifest.read_text().splitlines():\\n    line=line.strip()\\n    if not line: continue\\n    entry=json.loads(line)\\n    count+=1\\n    print(f\"{entry.get('permutation')} {entry.get('image_id')}\")\\nif count==0: raise SystemExit(\"No manifest entries found\")' "$manifest" > "$map_file"
-          manifest_count=$(wc -l < "$map_file" | tr -d ' ')
-          expected_count=${#expected[@]}
-          if [ "$manifest_count" -ne "$expected_count" ]; then
-            echo "Manifest entries mismatch: expected $expected_count, found $manifest_count" >&2
-            exit 1
-          fi
-          while read -r perm expected_id; do
-            if [ -z "$perm" ]; then
-              echo "Empty permutation entry in manifest map" >&2
-              exit 1
-            fi
-            tar_dir="/tmp/images/devcontainer-image-${perm}"
-            tar_path=$(find "$tar_dir" -maxdepth 1 -type f -name "*.tar" | head -n1)
-            if [ -z "$tar_path" ]; then
-              echo "Missing tarball for ${perm}" >&2
-              exit 1
-            fi
-            docker load -i "$tar_path"
-            TAG="${TAG_BASE}:${perm}"
-            docker tag "$TAG" "${TAG_BASE}:${GITHUB_SHA}-${perm}"
-            actual_id=$(docker image inspect --format='{{.Id}}' "$TAG")
-            if [ "$actual_id" != "$expected_id" ]; then
-              echo "Image ID mismatch for ${perm}: manifest=${expected_id} actual=${actual_id}" >&2
-              exit 1
-            fi
-            docker sbom "$TAG" > "/tmp/sbom-${perm}.txt"
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy@sha256:1274d635b5bc35503ec21a82f7bca3d735d95cca239352b04c082686061dc751 image --severity CRITICAL,HIGH,MEDIUM --exit-code 1 "$TAG"
-            docker push "$TAG"
-            docker push "${TAG_BASE}:${GITHUB_SHA}-${perm}"
-          done < "$map_file"
-
-      - name: Upload SBOMs
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Build base locally (no push)
+        uses: docker/bake-action@v6
         with:
-          name: sboms
-          path: /tmp/sbom-*.txt
-          retention-days: 7
+          files: .devcontainer/docker-bake.hcl
+          targets: base
+          load: true
+          push: false
+          cache-from: type=gha,scope=base-${{ github.ref_name }}
+          cache-to: type=gha,scope=base-${{ github.ref_name }},mode=max
 
-      - name: Upload consolidated tag map
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Build devcontainer (bake)
+        uses: docker/bake-action@v6
         with:
-          name: tag-map-consolidated
-          path: /tmp/tag-map-consolidated.txt
-          retention-days: 7
+          files: .devcontainer/docker-bake.hcl
+          targets: ${{ steps.map.outputs.target }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          set: |
+            ${{ steps.map.outputs.target }}.tags=${{ steps.meta-dev.outputs.tags }}
+            ${{ steps.map.outputs.target }}.labels=${{ steps.meta-dev.outputs.labels }}
+          cache-from: type=gha,scope=devcontainer-${{ matrix.permutation }}-${{ github.ref_name }}
+          cache-to: type=gha,scope=devcontainer-${{ matrix.permutation }}-${{ github.ref_name }},mode=max
 
-      - name: Upload consolidated manifest
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: manifest-consolidated
-          path: /tmp/manifest-consolidated.jsonl
-          retention-days: 7
-
-      - name: Cleanup runner
+      - name: Cleanup builder cache
         if: always()
         run: |
-          docker image prune -af || true
-          docker builder prune -af || true
-          rm -f /tmp/devcontainer-*.tar /tmp/images/devcontainer-image-*.tar /tmp/tag-map-consolidated.txt || true
-          rm -rf /tmp/images /tmp/tagmaps /tmp/manifests || true
-          rm -rf /tmp/tag-map-consolidated.txt /tmp/manifest-consolidated.jsonl || true
+          docker builder prune -f --filter until=24h || true
+          docker image prune -f --filter until=24h || true
