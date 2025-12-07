@@ -236,7 +236,6 @@ jobs:
           load: true
           pull: false
           set: |
-            base.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
             base.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
             base.cache-to=type=registry,ref=${{ env.BASE_CACHE_TAG }},mode=max,compression=zstd,oci-mediatypes=true,force-compression=true
             devcontainer_gcc14_clang_qual.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
