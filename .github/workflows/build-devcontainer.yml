@@ -225,19 +225,31 @@ jobs:
             fi
           done
 
-      - name: Build base and devcontainers (bake, single invocation)
+      - name: Build base image (bake)
         uses: docker/bake-action@v6
         with:
           workdir: ${{ github.workspace }}
           source: .
           files: .devcontainer/docker-bake.hcl
-          targets: all
+          targets: base
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           load: true
           pull: false
           set: |
             base.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
             base.cache-to=type=registry,ref=${{ env.BASE_CACHE_TAG }},mode=max,compression=zstd,oci-mediatypes=true,force-compression=true
+
+      - name: Build devcontainers (bake)
+        uses: docker/bake-action@v6
+        with:
+          workdir: ${{ github.workspace }}
+          source: .
+          files: .devcontainer/docker-bake.hcl
+          targets: devcontainer_gcc14_clang_qual,devcontainer_gcc14_clang_dev,devcontainer_gcc14_clangp2996,devcontainer_gcc15_clang_qual,devcontainer_gcc15_clang_dev,devcontainer_gcc15_clangp2996
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          load: true
+          pull: false
+          set: |
             devcontainer_gcc14_clang_qual.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
             devcontainer_gcc14_clang_dev.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
             devcontainer_gcc14_clangp2996.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
