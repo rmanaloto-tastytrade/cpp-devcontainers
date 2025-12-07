@@ -406,3 +406,27 @@ public:
 - Allan Deutsch: [C++Now 2017: "The Slot Map Data Structure"](https://www.youtube.com/watch?v=SHaAR7XPtNU), 2017
 - Jeff Gates: [Init, Update, Draw - Data Arrays](https://greysphere.tumblr.com/post/31601463396/data-arrays), 2012
 - Niklas Gray: [Data Structures Part 1: Bulk Data](https://ourmachinery.com/post/data-structures-part-1-bulk-data/), 2019
+
+## Self-hosted Runner Setup  
+
+This repository uses a self-hosted GitHub Actions runner to build the devcontainer image and run CI jobs. Follow these steps to set up the runner:  
+
+- **Download the runner** on your Linux host:  
+  ```bash  
+  mkdir -p ~/actions-runner && cd ~/actions-runner  
+  curl -o actions-runner-linux-x64-2.329.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz  
+  tar xzf actions-runner-linux-x64-2.329.0.tar.gz  
+  ```  
+- **Configure the runner** with your repository URL and registration token (generate in GitHub → Settings → Actions → Runners → Add new):  
+  ```bash  
+  ./config.sh --url https://github.com/rmanaloto-tastytrade/SlotMap --token <REGISTRATION_TOKEN>  
+  ```  
+  During configuration, assign a descriptive runner name and add labels such as `self-hosted`, `linux`, and `devcontainer-builder`.  
+- **Install and start the service** so the runner starts automatically:  
+  ```bash  
+  sudo ./svc.sh install  
+  sudo ./svc.sh start  
+  ```  
+- **Verify the runner** by checking the Actions → Runners page in this repository; it should show as "Idle" and "Online".  
+
+Once the runner is online, pushing changes to `main` will trigger the `build-devcontainer` workflow to build and push the devcontainer image.
