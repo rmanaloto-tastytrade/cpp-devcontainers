@@ -18,6 +18,13 @@ echo "Running bake smoke test with:"
 echo "  TAG_BASE=${TAG_BASE}"
 echo "  BASE_CACHE_TAG=${BASE_CACHE_TAG}"
 
+# Sanity-print plan and fail on docker.io/library or missing cache refs
+docker buildx bake --file .devcontainer/docker-bake.hcl --print all > /tmp/bake-smoke-plan.txt
+if grep -Ei "docker\\.io|library/" /tmp/bake-smoke-plan.txt; then
+  echo "docker.io reference detected in bake plan"
+  exit 1
+fi
+
 docker buildx bake \
   --file .devcontainer/docker-bake.hcl \
   --set base.cache-from="type=registry,ref=${BASE_CACHE_TAG}" \
@@ -42,3 +49,9 @@ docker buildx bake \
   devcontainer_gcc15_clang_qual \
   devcontainer_gcc15_clang_dev \
   devcontainer_gcc15_clangp2996
+
+# Ensure base image exists locally after bake
+if ! docker image inspect cpp-dev-base:local >/dev/null 2>&1 && ! docker image inspect localhost/cpp-dev-base:local >/dev/null 2>&1; then
+  echo "Base image cpp-dev-base:local not found locally after bake"
+  exit 1
+fi

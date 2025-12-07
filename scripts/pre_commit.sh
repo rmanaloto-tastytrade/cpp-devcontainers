@@ -7,6 +7,12 @@ cd "$REPO_ROOT"
 echo "[pre-commit] Running bake validation..."
 scripts/check_docker_bake.sh "$REPO_ROOT"
 
+# Optional local bake print guard (no build) if Docker is available
+if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  echo "[pre-commit] Running bake print guard (no build)..."
+  scripts/ci_bake_validate.sh || true
+fi
+
 echo "[pre-commit] Running devcontainer config validation (skips if Docker unavailable)..."
 scripts/check_devcontainer_config.sh "$REPO_ROOT"
 
