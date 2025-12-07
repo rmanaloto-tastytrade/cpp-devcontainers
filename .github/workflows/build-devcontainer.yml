@@ -85,12 +85,15 @@ jobs:
             type=sha,format=short
             type=raw,value=latest
 
+      - name: Persist helper metadata bake file
+        run: cp "${{ steps.meta-helper.outputs.bake-file }}" meta-helper-bake.json
+
       - name: Build & push helper (bake)
         uses: docker/bake-action@v6
         with:
           files: |
             .devcontainer/docker-bake.hcl
-            ${{ steps.meta-helper.outputs.bake-file }}
+            meta-helper-bake.json
           targets: ci-helper
           push: true
 
@@ -193,6 +196,9 @@ jobs:
             type=sha,format=short,prefix=${{ matrix.permutation }}-
             type=raw,value=latest-${{ matrix.permutation }},enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
+      - name: Persist devcontainer metadata bake file
+        run: cp "${{ steps.meta-dev.outputs.bake-file }}" meta-dev-bake.json
+
       - name: Build base locally (no push)
         uses: docker/bake-action@v6
         with:
@@ -216,7 +222,7 @@ jobs:
         with:
           files: |
             .devcontainer/docker-bake.hcl
-            ${{ steps.meta-dev.outputs.bake-file }}
+            meta-dev-bake.json
           targets: ${{ steps.map.outputs.target }}
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           # Always load locally so images are available on the runner even when pushed
