@@ -15,7 +15,7 @@ env:
   DOCKER_BUILDKIT: 1
   BUILDX_NO_DEFAULT_LOAD: 1
   TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
-  BASE_IMAGE_TAG: ghcr.io/${{ github.repository }}/cpp-dev-base:local
+  BASE_IMAGE_TAG: localhost/cpp-dev-base:local
   BASE_CACHE_TAG: ghcr.io/${{ github.repository }}/cpp-dev-base:cache
   SUMMARY_JSON: devcontainer-summary.json
   EXPECTED_RUNNER_NAME: c0802s4-000
@@ -191,8 +191,8 @@ jobs:
       - name: Guard against docker.io fallback
         run: |
           case "${BASE_IMAGE_TAG}" in
-            ghcr.io/*) ;;
-            *) echo "BASE_IMAGE_TAG must be ghcr.io/*, got ${BASE_IMAGE_TAG}"; exit 1 ;;
+            ghcr.io/*|localhost/*|cpp-dev-base:local) ;;
+            *) echo "BASE_IMAGE_TAG must be ghcr.io/* or localhost/*, got ${BASE_IMAGE_TAG}"; exit 1 ;;
           esac
           case "${BASE_CACHE_TAG}" in
             ghcr.io/*) ;;

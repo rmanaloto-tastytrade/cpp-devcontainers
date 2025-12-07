@@ -8,12 +8,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT}"
 
 TAG_BASE="${TAG_BASE:-ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/devcontainer}"
-BASE_IMAGE_TAG="${BASE_IMAGE_TAG:-ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/cpp-dev-base:local}"
+# Use localhost tag locally so we don't require a registry pull between steps.
+BASE_IMAGE_TAG="${BASE_IMAGE_TAG:-localhost/cpp-dev-base:local}"
 BASE_CACHE_TAG="${BASE_CACHE_TAG:-ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/cpp-dev-base:cache}"
 
 case "${BASE_IMAGE_TAG}" in
-  ghcr.io/*) ;;
-  *) echo "BASE_IMAGE_TAG must point at ghcr.io (got ${BASE_IMAGE_TAG})" >&2; exit 1 ;;
+  ghcr.io/*|localhost/*|cpp-dev-base:local) ;;
+  *) echo "BASE_IMAGE_TAG must point at ghcr.io/* or localhost/* (got ${BASE_IMAGE_TAG})" >&2; exit 1 ;;
 esac
 case "${BASE_CACHE_TAG}" in
   ghcr.io/*) ;;
