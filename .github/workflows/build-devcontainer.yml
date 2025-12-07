@@ -32,8 +32,8 @@ jobs:
           - gcc15-clangp2996
     env:
       TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
-      EXPECTED_RUNNER_NAME: c0802s4
-      EXPECTED_RUNNER_ALT: c0802s4-000
+      EXPECTED_RUNNER_NAME: c0802s4-000
+      EXPECTED_RUNNER_ALT: c0802s4
       TAG_MAP_FILE: /tmp/devcontainer-tags.txt
       BUILDX_CACHE_DIR: /tmp/.buildx-cache
       BUILDX_CACHE_MODE: gha
