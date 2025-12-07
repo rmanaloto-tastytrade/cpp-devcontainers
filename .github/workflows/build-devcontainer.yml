@@ -80,6 +80,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/ci-helper
+          bake-target: ci-helper
           tags: |
             type=sha,format=short
             type=raw,value=latest
@@ -87,12 +88,11 @@ jobs:
       - name: Build & push helper (bake)
         uses: docker/bake-action@v6
         with:
-          files: .devcontainer/docker-bake.hcl
+          files: |
+            .devcontainer/docker-bake.hcl
+            ${{ steps.meta-helper.outputs.bake-file }}
           targets: ci-helper
           push: true
-          set: |
-            ci-helper.tags=${{ steps.meta-helper.outputs.tags }}
-            ci-helper.labels=${{ steps.meta-helper.outputs.labels }}
 
       - name: Cleanup builder cache
         if: always()
@@ -169,16 +169,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Metadata for devcontainer
-        id: meta-dev
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.TAG_BASE }}
-          tags: |
-            type=raw,value=${{ matrix.permutation }}
-            type=sha,format=short,prefix=${{ matrix.permutation }}-
-            type=raw,value=latest-${{ matrix.permutation }},enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-
       - name: Map permutation to bake target
         id: map
         run: |
@@ -191,6 +181,17 @@ jobs:
             gcc15-clangp2996) echo "target=devcontainer_gcc15_clangp2996" >> $GITHUB_OUTPUT ;;
             *) echo "Unknown permutation" >&2; exit 1 ;;
           esac
+
+      - name: Metadata for devcontainer
+        id: meta-dev
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.TAG_BASE }}
+          bake-target: ${{ steps.map.outputs.target }}
+          tags: |
+            type=raw,value=${{ matrix.permutation }}
+            type=sha,format=short,prefix=${{ matrix.permutation }}-
+            type=raw,value=latest-${{ matrix.permutation }},enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
       - name: Build base locally (no push)
         uses: docker/bake-action@v6
@@ -213,14 +214,13 @@ jobs:
       - name: Build devcontainer (bake)
         uses: docker/bake-action@v6
         with:
-          files: .devcontainer/docker-bake.hcl
+          files: |
+            .devcontainer/docker-bake.hcl
+            ${{ steps.meta-dev.outputs.bake-file }}
           targets: ${{ steps.map.outputs.target }}
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           # Always load locally so images are available on the runner even when pushed
           load: true
-          set: |
-            ${{ steps.map.outputs.target }}.tags=${{ steps.meta-dev.outputs.tags }}
-            ${{ steps.map.outputs.target }}.labels=${{ steps.meta-dev.outputs.labels }}
 
       - name: SBOM (best-effort)
         if: always()
