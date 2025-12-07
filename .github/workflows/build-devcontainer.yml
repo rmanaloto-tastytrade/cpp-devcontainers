@@ -35,10 +35,22 @@ jobs:
       - name: Derive cache dir from Docker root
         id: cachepath-helper
         run: |
+          set -euo pipefail
           root="$(docker info --format '{{.DockerRootDir}}')"
-          echo "CACHE_DIR=${root}/buildx-cache" >> "$GITHUB_ENV"
-          mkdir -p "${root}/buildx-cache"
-          chmod 777 "${root}/buildx-cache"
+          target="${root}/buildx-cache"
+          if sudo -n true 2>/dev/null; then
+            sudo mkdir -p "$target"
+            sudo chown "$(id -u):$(id -g)" "$target"
+          else
+            mkdir -p "$target" || true
+          fi
+          if [ -w "$target" ]; then
+            echo "CACHE_DIR=$target" >> "$GITHUB_ENV"
+          else
+            fallback="${HOME}/.cache/docker-buildx"
+            mkdir -p "$fallback"
+            echo "CACHE_DIR=$fallback" >> "$GITHUB_ENV"
+          fi
 
       - name: Runner guard
         run: |
@@ -114,10 +126,22 @@ jobs:
       - name: Derive cache dir from Docker root
         id: cachepath-dev
         run: |
+          set -euo pipefail
           root="$(docker info --format '{{.DockerRootDir}}')"
-          echo "CACHE_DIR=${root}/buildx-cache" >> "$GITHUB_ENV"
-          mkdir -p "${root}/buildx-cache"
-          chmod 777 "${root}/buildx-cache"
+          target="${root}/buildx-cache"
+          if sudo -n true 2>/dev/null; then
+            sudo mkdir -p "$target"
+            sudo chown "$(id -u):$(id -g)" "$target"
+          else
+            mkdir -p "$target" || true
+          fi
+          if [ -w "$target" ]; then
+            echo "CACHE_DIR=$target" >> "$GITHUB_ENV"
+          else
+            fallback="${HOME}/.cache/docker-buildx"
+            mkdir -p "$fallback"
+            echo "CACHE_DIR=$fallback" >> "$GITHUB_ENV"
+          fi
 
       - name: Runner guard
         run: |
