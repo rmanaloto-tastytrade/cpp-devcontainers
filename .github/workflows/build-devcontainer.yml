@@ -191,7 +191,8 @@ jobs:
 
       - name: Guard against docker.io fallback
         run: |
-          docker buildx bake --file .devcontainer/docker-bake.hcl --set BASE_TAG=${{ env.BASE_IMAGE_TAG }} --print base > /tmp/bake-print.txt
+          BASE_TAG=${{ env.BASE_IMAGE_TAG }} BASE_CACHE_TAG=${{ env.BASE_CACHE_TAG }} \
+            docker buildx bake --file .devcontainer/docker-bake.hcl --print base > /tmp/bake-print.txt
           if grep -i "docker.io" /tmp/bake-print.txt; then
             echo "docker.io reference detected in bake plan"
             exit 1
