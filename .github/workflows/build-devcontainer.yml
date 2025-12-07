@@ -32,7 +32,8 @@ jobs:
           - gcc15-clangp2996
     env:
       TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
-      EXPECTED_RUNNER_NAME: c0802s4-000
+      EXPECTED_RUNNER_NAME: c0802s4
+      EXPECTED_RUNNER_ALT: c0802s4-000
       TAG_MAP_FILE: /tmp/devcontainer-tags.txt
       BUILDX_CACHE_DIR: /tmp/.buildx-cache
       BUILDX_CACHE_MODE: gha
@@ -53,12 +54,12 @@ jobs:
 
       - name: Runner guard
         run: |
-          if [ -n "${EXPECTED_RUNNER_NAME}" ]; then
-            actual="$(hostname)"
-            if [ "$actual" != "$EXPECTED_RUNNER_NAME" ]; then
-              echo "Runner guard failed: expected ${EXPECTED_RUNNER_NAME}, got ${actual}"
-              exit 1
-            fi
+          actual="$(hostname)"
+          expected="${EXPECTED_RUNNER_NAME:-}"
+          alt="${EXPECTED_RUNNER_ALT:-}"
+          if [ -n "$expected" ] && [ "$actual" != "$expected" ] && { [ -z "$alt" ] || [ "$actual" != "$alt" ]; }; then
+            echo "Runner guard failed: expected ${expected}${alt:+ or ${alt}}, got ${actual}"
+            exit 1
           fi
 
       - name: Set up Docker Buildx
