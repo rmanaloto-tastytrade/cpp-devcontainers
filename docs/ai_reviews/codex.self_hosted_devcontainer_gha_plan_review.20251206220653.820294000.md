@@ -1,0 +1,20 @@
+**Key Gaps**
+- Stage installs in `.devcontainer/Dockerfile` are not assertive: many downloads rely on network success without sha/version checks (awscli, pixi, uv/ruff, npm mermaid, LLVM apt pockets) and fallback branches silently succeed (gcc15 build failure falls back to empty /opt/gcc-15) so a later image can be “green” with missing tooling.
+- Validation is post-build only via `scripts/verify_devcontainer.sh`, not tied to bake targets, so GH Actions can push images that never ran the in-container checks or a per-stage sanity test.
+- The bake file `.devcontainer/docker-bake.hcl` builds permutations but has no `validate` group to prove each target used the right args (CLANG_VARIANT/GCC_VERSION/ENABLE_* flags) or that disabled tools were actually omitted.
+- Integrity of base artifacts is partial: apt repos are unpinned and Kitware/LLVM keys are not fingerprint-checked; no digest pinning for base images or the GHCR outputs noted in `docs/self_hosted_devcontainer_gha_plan.md`.
+- No enforcement that tool outputs are confined to their stages: tools merged from `/opt/stage` are not checked for path leaks into the base layer or for PATH ordering issues once symlinked.
+
+**Embed Validations via Bake**
+- Add “check” stages in the Dockerfile (`FROM <stage> AS check_<stage>`) that run fast assertions (version, sha, path ownership, disabled tool absence). Wire them in `.devcontainer/docker-bake.hcl` as `target "validate_<name>" { inherits=["<name>"]; target="check_<name>"; output=["type=cacheonly"] }`.
+- Create a `group "validate"` that includes base + each permutation (`devcontainer_gcc14_clang_qual`, etc.) and run `docker buildx bake validate` before pushing/publishing in the self-hosted workflow; fail fast if any check target exits non-zero.
+- Add a `function "with_cacheonly"` to bake that sets `*.output=type=cacheonly` for validate invocations to avoid image emission while still exercising all RUNs.
+- In the CI entrypoint script (planned in `docs/self_hosted_devcontainer_gha_plan.md`), call `docker buildx bake matrix validate` (validate first) and then run `scripts/verify_devcontainer.sh --image <tag>` once per built permutation to cross-check PATH/tool presence.
+- Surface validation artifacts (bake logs + generated check summaries) as workflow artifacts to prove what was validated per permutation.
+
+**Stage-Specific Checks to Add**
+- Base stage: verify Kitware/LLVM apt keys by fingerprint; assert gcc/g++ alternatives point to requested `${GCC_VERSION}`; fail if fallback gcc-14 path was taken; record apt package lists under `/opt/llvm-packages-*` and assert they exist; check `cmake --version`/`ninja --version` after install.
+- Compiler permutations: for each clang variant and gcc15, compile+run a “hello world” linking against the intended libc++/libstdc++; assert `/opt/clang-p2996` or `/opt/gcc-15` exists only when `ENABLE_*` is set and absent otherwise; ensure `clangd/clang-tidy` match the numeric variant; fail if P2996 build or gcc15 build falls back to empty directories.
+- Tool stages (node_mermaid, mold, gh_cli, ccache, sccache, ripgrep, cppcheck, valgrind, python_tools, pixi, iwyu, mrdocs, jq, awscli): add sha/version assertions and `command --version` checks; for iwyu ensure it links to `/usr/lib/llvm-${LLVM_VERSION}`; for mold check both `mold` and `ld.mold` exist; for awscli/pixi/uv/ruff enforce pinned versions and checksum of installers.
+- Merge stage: assert disabled tool dirs were removed, PATH only includes expected prefixes, and `/opt/stage` is empty after copy; check that `ccache/sccache` binaries resolve before system compilers.
+- Final devcontainer: verify PATH order includes the permutation compiler bins and excludes others, `mutagen --version` matches `MUTAGEN_VERSION`, `/opt/vcpkg` is empty but writable, and cache dirs under `/var/cache/{ccache,sccache}` are owned by `${USERNAME}`. Hook `scripts/verify_cache_volume.sh` into the workflow to validate volume layout once a container is started (best-effort job).

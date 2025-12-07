@@ -1,0 +1,7 @@
+# Runner and Secret Hygiene (Self-Hosted Devcontainer Builds)
+
+- **Runner isolation**: use dedicated labels (`self-hosted`, `devcontainer-builder`, host name) and keep the runner single-tenant. Clean Docker/Buildx state after every job (workflow already prunes on build/publish). Rebuild or snapshot the runner periodically to avoid drift.
+- **Secrets handling**: authenticate with GHCR via `GITHUB_TOKEN`/PAT scoped to `write:packages` only. Do not persist tokens on disk; rely on Actions-provided environment. Avoid adding new secrets to the workflow until necessary; document any additions here.
+- **Scanner and tool pinning**: hadolint and Trivy are pinned by digest (`hadolint/hadolint@sha256:9259e253a4e299b50c92006149dd3a171c7ea3c5bd36f060022b5d2c1ff0fbbe`, `aquasec/trivy@sha256:1274d635b5bc35503ec21a82f7bca3d735d95cca239352b04c082686061dc751`). Update digests intentionally.
+- **Retention and rollback**: use `scripts/ci/ghcr_devcontainer_prune.sh` (dry-run by default, set `DELETE=1` to delete) to prune old SHA tags per permutation; use `scripts/ci/ghcr_devcontainer_rollback.sh` to retag a known-good SHA to `<perm>` and `<sha>-<perm>`. Both require GHCR login and optional `GHCR_OWNER`/`GHCR_OWNER_TYPE` inputs for pruning.
+- **Provenance/signing (follow-up)**: plan to add cosign/attestation once the pipeline stabilizes; keep the signing key off-runner or use keyless OIDC flow. Track this in future security work.

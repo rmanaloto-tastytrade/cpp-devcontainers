@@ -1,21 +1,40 @@
-# Workflows Documentation  
+# Workflows Documentation
 
-This folder contains GitHub Actions workflows for the SlotMap project. The workflows automate tasks such as building the devcontainer image and (optionally) running tests.  
+This folder contains GitHub Actions workflows for the SlotMap project. The workflows automate tasks such as building the devcontainer images and running CI.
 
-## build-devcontainer.yml  
+## build-devcontainer.yml
 
-This workflow builds and publishes the devcontainer Docker image used by the project. It runs on a self-hosted runner labelled `self-hosted` and `devcontainer-builder`. The steps are:  
+Builds all devcontainer permutations on a self-hosted runner (labels: `self-hosted`, `devcontainer-builder`, `c0802s4-000`) using `docker buildx bake` via `scripts/ci/build_devcontainers_ci.sh`.
 
-- Checkout the repository.  
-- Set up Docker Buildx for building multi-platform images.  
-- Log in to GitHub Container Registry (GHCR) using the `GITHUB_TOKEN`.  
-- Build the devcontainer image from `.devcontainer/Dockerfile` and push it to GHCR.  
+- Matrix: gcc14/gcc15 × clang21/clang22/clangp2996.
+- Runner guard to avoid unintended/costly hosts.
+- Preflight devcontainer/bake validation (`check_docker_bake.sh`, `check_devcontainer_config.sh`).
+- Buildx cache via `type=gha` salted by commit (`CACHE_SCOPE_SALT` -> `GITHUB_SHA`); PR builds disable cache.
+- Runs `bake --print/--check` and `bake validate` targets before building; build job uploads image tars/manifests; publish job validates manifests vs loaded images, then SBOM + Trivy scans (pinned digests) before pushing permutation + SHA tags.
+- Hadolint/Trivy pinned by digest; base image pinned by digest; runner cleanup after build/publish; artifacts (tag maps, manifests, SBOMs) uploaded.
 
-### Trigger  
+### Trigger
 
-- Automatically runs on pushes to the `main` branch.  
-- Can also be run manually using the *Run workflow* button in the Actions tab.  
+- `push` to `main`
+- `pull_request` to `main` (build-only)
+- `workflow_dispatch`
 
-## Adding More Workflows  
+### Rollback / retention
+- To roll back a bad push: use `scripts/ci/ghcr_devcontainer_rollback.sh` (pulls `<sha>-<perm>`, retags `<perm>` and optional new `<sha>-<perm>`, and pushes).
+- GHCR retention: use `scripts/ci/ghcr_devcontainer_prune.sh` (dry-run by default; set `DELETE=1`) to prune older SHA tags per permutation. See `docs/runner_security.md` for runner/secret hygiene notes.
 
-You can add other workflows to automate linting, testing, or deployment. For consistency between local development and CI, try to run your jobs inside the devcontainer image built by `build-devcontainer.yml`.
+## ci.yml
+
+Builds and tests the codebase on supported platforms/runtimes.
+
+## coverage.yml
+
+Runs coverage collection and reporting for the codebase.
+
+## devcontainer-lint.yml
+
+Validates devcontainer configuration and linting rules.
+
+## hardcoded-guard.yml
+
+Guards against reintroducing hardcoded host/user/port strings.

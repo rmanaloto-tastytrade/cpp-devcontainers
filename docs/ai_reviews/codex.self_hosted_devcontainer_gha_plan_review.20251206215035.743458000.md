@@ -1,0 +1,12 @@
+- Workflow parity missing: plan assumes `build-devcontainer.yml` from origin/main exists but isn’t in the branch; need explicit restore source, diff review, and confirmation of triggers/permissions.  
+- GHCR push path unspecified for PRs/forks; guard pushes to main/default branch only and add a build-only path for PRs to avoid secret exposure/failures.  
+- Permissions gap: ensure workflow sets `permissions: packages: write, contents: read` (and `id-token: write` if signing later); default token may be insufficient on self-hosted runner without that block.  
+- Tag strategy risky: overwriting `latest` without atomic multi-image success can leave mixed permutations; gate publish on all builds passing and push SHA+permutation tags first, then move `latest`.  
+- Reproducibility gap: bake inputs (compiler versions, base images) not pinned in the plan; lock them or record them in the script to avoid drift between local and CI.  
+- Self-hosted readiness not validated: buildx/QEMU availability, Docker disk cleanup, and GHCR login caching need checks in the workflow before running the bake to prevent runner breakage.  
+- Missing cache story: no plan for buildx cache export/import; add cache-from/cache-to or GHA cache to keep self-hosted builds fast and avoid repeated dependency downloads.  
+- Matrix/parallelism undefined: plan mentions permutations but not whether they run in parallel or serial; define a matrix and concurrency group to prevent tag races on simultaneous pushes.  
+- Validation detail thin: “smoke step” not specified; ensure per-image validation blocks publish and covers toolchain versions, vcpkg paths, and devcontainer entrypoint sanity.  
+- devcontainer consumption mapping unclear: devcontainer.json still accepts `DEVCONTAINER_IMAGE` but plan lacks concrete defaults or env file checked into repo; add a deterministic map from permutation -> GHCR tag and document how `devcontainer up` picks it.  
+- Observability gap: plan doesn’t mention logging/artifacts (bake logs, image digest list) for audit/debug; add outputs/artifacts for produced digests and validation logs.  
+- Security/CI fit: no image signing or vulnerability scan; at minimum, consider adding `cosign attest` or a scan step before publish to GHCR, or document deferral.

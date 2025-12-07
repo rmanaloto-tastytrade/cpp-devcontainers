@@ -1,27 +1,163 @@
-name: Build Devcontainer Image
+name: Build Devcontainer Images (self-hosted)
 
 on:
   push:
+    branches: [ "main", "modernization.20251118" ]
+  pull_request:
     branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
-  build-devcontainer:
-    if: github.actor == 'rmanaloto'  # ensure only your user triggers
+  build:
+    name: build-${{ matrix.permutation }}
     runs-on:
       - self-hosted
       - devcontainer-builder
+      - c0802s4-000
+    timeout-minutes: 120
+    concurrency:
+      group: devcontainer-${{ github.ref }}-build
+      cancel-in-progress: true
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
-    permissions:
-      contents: read
-      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        permutation:
+          - gcc14-clang21
+          - gcc14-clang22
+          - gcc14-clangp2996
+          - gcc15-clang21
+          - gcc15-clang22
+          - gcc15-clangp2996
+    env:
+      TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
+      EXPECTED_RUNNER_NAME: c0802s4-000
+      RUNNER_NAME: ${{ runner.name }}
+      TAG_MAP_FILE: /tmp/devcontainer-tags.txt
+      BUILDX_CACHE_DIR: /tmp/.buildx-cache
+      BUILDX_CACHE_MODE: gha
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Lint Dockerfile (hadolint)
+        run: docker run --rm -i hadolint/hadolint@sha256:9259e253a4e299b50c92006149dd3a171c7ea3c5bd36f060022b5d2c1ff0fbbe < .devcontainer/Dockerfile
+
+      - name: Preflight devcontainer/bake validation
+        run: |
+          ./scripts/check_docker_bake.sh
+          npm install -g @devcontainers/cli
+          devcontainer validate --workspace-folder .
+          ./scripts/check_devcontainer_config.sh
+
+      - name: Runner guard
+        run: |
+          if [ -n "${EXPECTED_RUNNER_NAME}" ] && [ "${RUNNER_NAME}" != "${EXPECTED_RUNNER_NAME}" ]; then
+            echo "Runner guard failed: expected ${EXPECTED_RUNNER_NAME}, got ${RUNNER_NAME}"
+            exit 1
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build permutation (no push)
+        env:
+          PERMUTATION: ${{ matrix.permutation }}
+          PUSH_IMAGES: 0
+          PUBLISH_LATEST: 0
+          TAG_BASE: ${{ env.TAG_BASE }}
+          TAG_MAP_FILE: ${{ env.TAG_MAP_FILE }}
+          TAG_MAP_PERM: /tmp/tag-${{ matrix.permutation }}.txt
+          EXPECTED_RUNNER_NAME: ${{ env.EXPECTED_RUNNER_NAME }}
+          RUNNER_NAME: ${{ env.RUNNER_NAME }}
+          BUILDX_CACHE_DIR: ${{ env.BUILDX_CACHE_DIR }}
+          BUILDX_CACHE_MODE: ${{ env.BUILDX_CACHE_MODE }}
+          OUTPUT_TAR: /tmp/devcontainer-${{ matrix.permutation }}.tar
+          MANIFEST_FILE: /tmp/manifest-${{ matrix.permutation }}.json
+        run: ./scripts/ci/build_devcontainers_ci.sh
+
+      - name: Upload tag map
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devcontainer-tags-${{ matrix.permutation }}
+          path: ${{ env.TAG_MAP_FILE }}
+          retention-days: 7
+
+      - name: Upload image tar
+        uses: actions/upload-artifact@v4
+        with:
+          name: devcontainer-image-${{ matrix.permutation }}
+          path: /tmp/devcontainer-${{ matrix.permutation }}.tar
+          retention-days: 3
+
+      - name: Upload per-permutation tag map
+        uses: actions/upload-artifact@v4
+        with:
+          name: tag-permutation-${{ matrix.permutation }}
+          path: /tmp/tag-${{ matrix.permutation }}.txt
+          retention-days: 3
+
+      - name: Upload manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: manifest-${{ matrix.permutation }}
+          path: /tmp/manifest-${{ matrix.permutation }}.json
+          retention-days: 3
+
+      - name: Cleanup build artifacts
+        if: always()
+        run: |
+          rm -f /tmp/devcontainer-${{ matrix.permutation }}.tar /tmp/tag-${{ matrix.permutation }}.txt /tmp/manifest-${{ matrix.permutation }}.json || true
+
+      - name: Cleanup runner (build job)
+        if: always()
+        run: |
+          docker image prune -af || true
+          docker builder prune -af || true
+          rm -rf /tmp/.buildx-cache* || true
+
+  publish:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    name: publish
+    runs-on:
+      - self-hosted
+      - devcontainer-builder
+      - c0802s4-000
+    timeout-minutes: 120
+    env:
+      TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
+      EXPECTED_RUNNER_NAME: c0802s4-000
+      RUNNER_NAME: ${{ runner.name }}
+    concurrency:
+      group: devcontainer-${{ github.ref }}-publish
+      cancel-in-progress: true
+    steps:
+      - name: Runner guard
+        run: |
+          if [ -n "${EXPECTED_RUNNER_NAME}" ] && [ "${RUNNER_NAME}" != "${EXPECTED_RUNNER_NAME}" ]; then
+            echo "Runner guard failed: expected ${EXPECTED_RUNNER_NAME}, got ${RUNNER_NAME}"
+            exit 1
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cleanup before publish
+        run: |
+          docker image prune -af || true
+          docker builder prune -af || true
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -30,12 +166,167 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build devcontainer image
-        uses: docker/build-push-action@v5
+      - name: Download images
+        uses: actions/download-artifact@v4
         with:
-          context: .
-          file: .devcontainer/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}/devcontainer:latest
-            ghcr.io/${{ github.repository }}/devcontainer:${{ github.sha }}
+          path: /tmp/images
+          pattern: devcontainer-image-*
+
+      - name: Download tag maps
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/tagmaps
+          pattern: tag-permutation-*
+
+      - name: Download manifests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/manifests
+          pattern: manifest-*
+
+      - name: Validate artifacts and consolidate manifests/tag maps
+        run: |
+          set -euo pipefail
+          expected=(gcc14-clang21 gcc14-clang22 gcc14-clangp2996 gcc15-clang21 gcc15-clang22 gcc15-clangp2996)
+          tag_out=/tmp/tag-map-consolidated.txt
+          man_out=/tmp/manifest-consolidated.jsonl
+          : > "$tag_out"
+          : > "$man_out"
+          python3 - <<'PY' "${expected[@]}"
+import json
+import sys
+from pathlib import Path
+
+expected = sys.argv[1:]
+images_dir = Path("/tmp/images")
+tagmaps_dir = Path("/tmp/tagmaps")
+manifests_dir = Path("/tmp/manifests")
+tag_out = Path("/tmp/tag-map-consolidated.txt")
+man_out = Path("/tmp/manifest-consolidated.jsonl")
+
+seen = set()
+for perm in expected:
+    tar_dir = images_dir / f"devcontainer-image-{perm}"
+    tars = sorted(tar_dir.glob("*.tar"))
+    if len(tars) != 1:
+        raise SystemExit(f"Tarball missing or ambiguous for {perm}: {tars}")
+
+    tag_file = tagmaps_dir / f"tag-permutation-{perm}" / f"tag-{perm}.txt"
+    if not tag_file.is_file():
+        raise SystemExit(f"Tag map missing for {perm}: {tag_file}")
+
+    manifest_file = manifests_dir / f"manifest-{perm}" / f"manifest-{perm}.json"
+    if not manifest_file.is_file():
+        raise SystemExit(f"Manifest missing for {perm}: {manifest_file}")
+
+    entries = []
+    for line in manifest_file.read_text().splitlines():
+        line = line.strip()
+        if line:
+            entries.append(json.loads(line))
+    if len(entries) != 1:
+        raise SystemExit(f"Manifest for {perm} must have exactly one entry, got {len(entries)}")
+
+    entry = entries[0]
+    if entry.get("permutation") != perm:
+        raise SystemExit(f"Manifest permutation mismatch for {perm}: {entry.get('permutation')}")
+    if not entry.get("image_id"):
+        raise SystemExit(f"Manifest missing image_id for {perm}")
+    if perm in seen:
+        raise SystemExit(f"Duplicate manifest entry for {perm}")
+    seen.add(perm)
+
+    with tag_out.open("a", encoding="utf-8") as fh:
+        fh.write(tag_file.read_text())
+    with man_out.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(entry) + "\n")
+
+extra_dirs = [p.name for p in images_dir.glob("devcontainer-image-*") if p.name.removeprefix("devcontainer-image-") not in expected]
+if extra_dirs:
+    raise SystemExit(f"Unexpected image artifacts present: {extra_dirs}")
+PY
+
+      - name: Load, verify, scan, and push
+        run: |
+          set -euo pipefail
+          expected=(gcc14-clang21 gcc14-clang22 gcc14-clangp2996 gcc15-clang21 gcc15-clang22 gcc15-clangp2996)
+          manifest=/tmp/manifest-consolidated.jsonl
+          map_file=/tmp/manifest-map.txt
+          python3 - <<'PY' "$manifest" > "$map_file"
+import json, sys
+from pathlib import Path
+manifest = Path(sys.argv[1])
+count = 0
+for line in manifest.read_text().splitlines():
+    line = line.strip()
+    if not line:
+        continue
+    entry = json.loads(line)
+    count += 1
+    print(f"{entry.get('permutation')} {entry.get('image_id')}")
+if count == 0:
+    raise SystemExit("No manifest entries found")
+PY
+          manifest_count=$(wc -l < "$map_file" | tr -d ' ')
+          expected_count=${#expected[@]}
+          if [ "$manifest_count" -ne "$expected_count" ]; then
+            echo "Manifest entries mismatch: expected $expected_count, found $manifest_count" >&2
+            exit 1
+          fi
+          while read -r perm expected_id; do
+            if [ -z "$perm" ]; then
+              echo "Empty permutation entry in manifest map" >&2
+              exit 1
+            fi
+            tar_dir="/tmp/images/devcontainer-image-${perm}"
+            tar_path=$(find "$tar_dir" -maxdepth 1 -type f -name "*.tar" | head -n1)
+            if [ -z "$tar_path" ]; then
+              echo "Missing tarball for ${perm}" >&2
+              exit 1
+            fi
+            docker load -i "$tar_path"
+            TAG="${TAG_BASE}:${perm}"
+            docker tag "$TAG" "${TAG_BASE}:${GITHUB_SHA}-${perm}"
+            actual_id=$(docker image inspect --format='{{.Id}}' "$TAG")
+            if [ "$actual_id" != "$expected_id" ]; then
+              echo "Image ID mismatch for ${perm}: manifest=${expected_id} actual=${actual_id}" >&2
+              exit 1
+            fi
+            docker sbom "$TAG" > "/tmp/sbom-${perm}.txt"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy@sha256:1274d635b5bc35503ec21a82f7bca3d735d95cca239352b04c082686061dc751 image --severity CRITICAL,HIGH,MEDIUM --exit-code 1 "$TAG"
+            docker push "$TAG"
+            docker push "${TAG_BASE}:${GITHUB_SHA}-${perm}"
+          done < "$map_file"
+
+      - name: Upload SBOMs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sboms
+          path: /tmp/sbom-*.txt
+          retention-days: 7
+
+      - name: Upload consolidated tag map
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tag-map-consolidated
+          path: /tmp/tag-map-consolidated.txt
+          retention-days: 7
+
+      - name: Upload consolidated manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manifest-consolidated
+          path: /tmp/manifest-consolidated.jsonl
+          retention-days: 7
+
+      - name: Cleanup runner
+        if: always()
+        run: |
+          docker image prune -af || true
+          docker builder prune -af || true
+          rm -f /tmp/devcontainer-*.tar /tmp/images/devcontainer-image-*.tar /tmp/tag-map-consolidated.txt || true
+          rm -rf /tmp/images /tmp/tagmaps /tmp/manifests || true
+          rm -rf /tmp/tag-map-consolidated.txt /tmp/manifest-consolidated.jsonl || true

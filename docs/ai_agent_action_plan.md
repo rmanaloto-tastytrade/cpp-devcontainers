@@ -6,6 +6,14 @@ This repository contains a C++ project (`SlotMap`) with a custom devcontainer se
 
 **Goal:** Refactor the setup to use native `devcontainer` CLI features, improve security, and simplify the architecture.
 
+## Top Priority: Self-Hosted Devcontainer Builds via GHA
+
+**Objective:** Make the self-hosted GitHub Actions workflow the authoritative path to build and publish the devcontainer images (all permutations) using the project’s automation. See `docs/self_hosted_devcontainer_gha_plan.md` for the current-state analysis and detailed plan. Complete this before the tasks below.
+
+**AI agents to use for reviews:** codex, claude, gemini, cursor-agent, copilot, docker ai (Ask Gordon).
+
+**Security note:** runner/secret hygiene and rollback/retention scripts are documented in `docs/runner_security.md`.
+
 **Constraints:**
 
 * **OS:** macOS (Host), Ubuntu (Container).

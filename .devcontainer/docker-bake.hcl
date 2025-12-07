@@ -347,3 +347,51 @@ group "matrix" {
     "devcontainer_gcc15_clangp2996",
   ]
 }
+
+# Validation targets (cache-only) exercising the validate stage for each permutation.
+target "validate_gcc14_clang_qual" {
+  inherits = ["devcontainer_gcc14_clang_qual"]
+  target   = "validate"
+  output   = ["type=cacheonly"]
+}
+
+target "validate_gcc14_clang_dev" {
+  inherits = ["devcontainer_gcc14_clang_dev"]
+  target   = "validate"
+  output   = ["type=cacheonly"]
+}
+
+target "validate_gcc14_clangp2996" {
+  inherits = ["devcontainer_gcc14_clangp2996"]
+  target   = "validate"
+  output   = ["type=cacheonly"]
+}
+
+target "validate_gcc15_clang_qual" {
+  inherits = ["devcontainer_gcc15_clang_qual"]
+  target   = "validate"
+  output   = ["type=cacheonly"]
+}
+
+target "validate_gcc15_clang_dev" {
+  inherits = ["devcontainer_gcc15_clang_dev"]
+  target   = "validate"
+  output   = ["type=cacheonly"]
+}
+
+target "validate_gcc15_clangp2996" {
+  inherits = ["devcontainer_gcc15_clangp2996"]
+  target   = "validate"
+  output   = ["type=cacheonly"]
+}
+
+group "validate" {
+  targets = [
+    "validate_gcc14_clang_qual",
+    "validate_gcc14_clang_dev",
+    "validate_gcc14_clangp2996",
+    "validate_gcc15_clang_qual",
+    "validate_gcc15_clang_dev",
+    "validate_gcc15_clangp2996",
+  ]
+}
