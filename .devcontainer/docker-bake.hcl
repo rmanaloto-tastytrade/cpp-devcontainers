@@ -3,7 +3,8 @@ variable "TAG" {
 }
 
 variable "BASE_TAG" {
-  default = "cpp-cpp-dev-base:local"
+  # Fully qualified base image tag (avoid docker.io/library fallback)
+  default = "ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/cpp-dev-base:local"
 }
 
 variable "PLATFORM" {
@@ -123,7 +124,12 @@ target "_base" {
 target "base" {
   inherits = ["_base"]
   target   = "base"
-  tags     = ["${BASE_TAG}"]
+  tags = [
+    "${BASE_TAG}",
+    # Local alias to ensure availability without registry pulls
+    "localhost/cpp-dev-base:local",
+    "cpp-dev-base:local"
+  ]
 }
 
 target "clang_p2996" {
