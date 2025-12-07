@@ -251,12 +251,24 @@ jobs:
             devcontainer_gcc15_clang_qual.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
             devcontainer_gcc15_clang_dev.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
             devcontainer_gcc15_clangp2996.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
-            devcontainer_gcc14_clang_qual.tags=${{ env.TAG_BASE }}:gcc14-clang21,${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }},${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}
-            devcontainer_gcc14_clang_dev.tags=${{ env.TAG_BASE }}:gcc14-clang22,${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }},${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}
-            devcontainer_gcc14_clangp2996.tags=${{ env.TAG_BASE }}:gcc14-clangp2996,${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }},${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}
-            devcontainer_gcc15_clang_qual.tags=${{ env.TAG_BASE }}:gcc15-clang21,${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }},${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}
-            devcontainer_gcc15_clang_dev.tags=${{ env.TAG_BASE }}:gcc15-clang22,${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }},${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}
-            devcontainer_gcc15_clangp2996.tags=${{ env.TAG_BASE }}:gcc15-clangp2996,${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }},${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}
+            devcontainer_gcc14_clang_qual.tags=${{ env.TAG_BASE }}:gcc14-clang21
+            devcontainer_gcc14_clang_qual.tags=${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }}
+            devcontainer_gcc14_clang_qual.tags=${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}
+            devcontainer_gcc14_clang_dev.tags=${{ env.TAG_BASE }}:gcc14-clang22
+            devcontainer_gcc14_clang_dev.tags=${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }}
+            devcontainer_gcc14_clang_dev.tags=${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}
+            devcontainer_gcc14_clangp2996.tags=${{ env.TAG_BASE }}:gcc14-clangp2996
+            devcontainer_gcc14_clangp2996.tags=${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }}
+            devcontainer_gcc14_clangp2996.tags=${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}
+            devcontainer_gcc15_clang_qual.tags=${{ env.TAG_BASE }}:gcc15-clang21
+            devcontainer_gcc15_clang_qual.tags=${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }}
+            devcontainer_gcc15_clang_qual.tags=${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}
+            devcontainer_gcc15_clang_dev.tags=${{ env.TAG_BASE }}:gcc15-clang22
+            devcontainer_gcc15_clang_dev.tags=${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }}
+            devcontainer_gcc15_clang_dev.tags=${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}
+            devcontainer_gcc15_clangp2996.tags=${{ env.TAG_BASE }}:gcc15-clangp2996
+            devcontainer_gcc15_clangp2996.tags=${{ env.TAG_BASE }}:sha-${{ env.SHORT_SHA }}
+            devcontainer_gcc15_clangp2996.tags=${{ env.TAG_BASE }}:ts-${{ env.BUILD_TS }}
 
       - name: Cleanup builder cache
         if: always()
