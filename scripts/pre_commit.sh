@@ -13,15 +13,15 @@ scripts/check_devcontainer_config.sh "$REPO_ROOT"
 echo "[pre-commit] Checking for hardcoded personal hosts/users..."
 scripts/check_hardcoded_refs.sh "$REPO_ROOT"
 
-if command -v hadolint >/dev/null 2>&1; then
-  echo "[pre-commit] Running hadolint on .devcontainer/Dockerfile (warnings suppressed; errors fail)..."
-  if ! hadolint --failure-threshold error .devcontainer/Dockerfile >/dev/null; then
-    echo "[pre-commit] hadolint detected errors (showing output):"
-    hadolint --failure-threshold error .devcontainer/Dockerfile
-    exit 1
-  fi
-else
-  echo "[pre-commit] WARNING: hadolint not installed; skipping Dockerfile lint." >&2
+if ! command -v hadolint >/dev/null 2>&1; then
+  echo "[pre-commit] ERROR: hadolint is required. Install it and retry." >&2
+  exit 1
+fi
+echo "[pre-commit] Running hadolint on .devcontainer/Dockerfile (warnings suppressed; errors fail)..."
+if ! hadolint --failure-threshold error .devcontainer/Dockerfile >/dev/null; then
+  echo "[pre-commit] hadolint detected errors (showing output):"
+  hadolint --failure-threshold error .devcontainer/Dockerfile
+  exit 1
 fi
 
 if command -v shellcheck >/dev/null 2>&1; then
