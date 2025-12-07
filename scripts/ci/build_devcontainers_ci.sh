@@ -96,6 +96,7 @@ fi
 tag_base="${TAG_BASE:-$tag_base_default}"
 
 push_images="${PUSH_IMAGES:-0}"
+pull_images="${PULL_IMAGES:-0}"
 publish_latest="${PUBLISH_LATEST:-0}"
 tag_map_file="${TAG_MAP_FILE:-devcontainer-tags.txt}"
 
@@ -110,7 +111,10 @@ fi
 
 tags_csv="$(IFS=, ; echo "${tags[*]}")"
 push_flag="--load"
-pull_flag="--pull"
+pull_flag=""
+if [[ "$pull_images" == "1" ]]; then
+  pull_flag="--pull"
+fi
 output_args=()
 if [[ -n "${OUTPUT_TAR:-}" ]]; then
   output_args+=(--set "$target.output=type=docker,dest=${OUTPUT_TAR}")
@@ -120,7 +124,7 @@ echo "[validate] target=$validate_target"
 docker buildx bake -f .devcontainer/docker-bake.hcl "$validate_target" \
   --no-cache \
   "${cache_args[@]}" \
-  $pull_flag
+  ${pull_flag:+$pull_flag}
 
 echo "[build] target=$target tags=${tags_csv} push=${push_images}"
 
@@ -128,7 +132,7 @@ docker buildx bake -f .devcontainer/docker-bake.hcl "$target" \
   --set "$target.tags=${tags_csv}" \
   "${cache_args[@]}" \
   "${output_args[@]}" \
-  $pull_flag \
+  ${pull_flag:+$pull_flag} \
   $push_flag
 
 if [[ "${SKIP_SMOKE:-0}" != "1" ]]; then
