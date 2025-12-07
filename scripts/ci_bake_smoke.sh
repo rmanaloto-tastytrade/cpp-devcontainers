@@ -29,6 +29,11 @@ docker buildx bake \
   --file .devcontainer/docker-bake.hcl \
   --set base.cache-from="type=registry,ref=${BASE_CACHE_TAG}" \
   --set base.cache-to="type=registry,ref=${BASE_CACHE_TAG},mode=max,compression=zstd,oci-mediatypes=true,force-compression=true" \
+  --load \
+  base
+
+docker buildx bake \
+  --file .devcontainer/docker-bake.hcl \
   --set devcontainer_gcc14_clang_qual.cache-from="type=registry,ref=${BASE_CACHE_TAG}" \
   --set devcontainer_gcc14_clang_dev.cache-from="type=registry,ref=${BASE_CACHE_TAG}" \
   --set devcontainer_gcc14_clangp2996.cache-from="type=registry,ref=${BASE_CACHE_TAG}" \
@@ -42,7 +47,6 @@ docker buildx bake \
   --set devcontainer_gcc15_clang_dev.tags="${TAG_BASE}:gcc15-clang22" \
   --set devcontainer_gcc15_clangp2996.tags="${TAG_BASE}:gcc15-clangp2996" \
   --load \
-  all \
   devcontainer_gcc14_clang_qual \
   devcontainer_gcc14_clang_dev \
   devcontainer_gcc14_clangp2996 \
