@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Lint Dockerfile (hadolint)
-        run: docker run --rm -i hadolint/hadolint@sha256:9259e253a4e299b50c92006149dd3a171c7ea3c5bd36f060022b5d2c1ff0fbbe --failure-threshold error < .devcontainer/Dockerfile
+        run: docker run --rm -i hadolint/hadolint@sha256:9259e253a4e299b50c92006149dd3a171c7ea3c5bd36f060022b5d2c1ff0fbbe hadolint --failure-threshold error - < .devcontainer/Dockerfile
 
       - name: Preflight devcontainer/bake validation
         run: |
