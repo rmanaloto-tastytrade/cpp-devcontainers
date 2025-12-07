@@ -16,6 +16,7 @@ env:
   BUILDX_NO_DEFAULT_LOAD: 1
   TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
   BASE_IMAGE_TAG: ghcr.io/${{ github.repository }}/cpp-dev-base:local
+  BASE_CACHE_TAG: ghcr.io/${{ github.repository }}/cpp-dev-base:cache
   EXPECTED_RUNNER_NAME: c0802s4-000
   EXPECTED_RUNNER_ALT: c0802s4
   CACHE_DIR: /var/cache/docker-buildx
@@ -223,6 +224,8 @@ jobs:
           set: |
             BASE_TAG=${{ env.BASE_IMAGE_TAG }}
             base.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
+            base.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
+            base.cache-to=type=registry,ref=${{ env.BASE_CACHE_TAG }},mode=max,compression=zstd,oci-mediatypes=true,force-compression=true
 
       - name: Hadolint Dockerfile
         run: |
@@ -250,6 +253,7 @@ jobs:
           set: |
             BASE_TAG=${{ env.BASE_IMAGE_TAG }}
             ${{ steps.map.outputs.target }}.args.BASE_IMAGE=${{ env.BASE_IMAGE_TAG }}
+            ${{ steps.map.outputs.target }}.cache-from=type=registry,ref=${{ env.BASE_CACHE_TAG }}
 
       - name: SBOM (best-effort)
         if: always()

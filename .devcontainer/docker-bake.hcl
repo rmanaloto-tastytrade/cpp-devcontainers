@@ -7,6 +7,11 @@ variable "BASE_TAG" {
   default = "ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/cpp-dev-base:local"
 }
 
+variable "BASE_CACHE_TAG" {
+  # Registry cache ref for the base image
+  default = "ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/cpp-dev-base:cache"
+}
+
 variable "PLATFORM" {
   default = "linux/amd64"
 }
@@ -72,8 +77,14 @@ target "_base" {
   context    = "."
   dockerfile = ".devcontainer/Dockerfile"
   platform   = [variable.PLATFORM]
-  cache-from = ["type=local,src=${CACHE_DIR}/devcontainer"]
-  cache-to   = ["type=local,dest=${CACHE_DIR}/devcontainer,mode=max"]
+  cache-from = [
+    "type=local,src=${CACHE_DIR}/devcontainer",
+    "type=registry,ref=${BASE_CACHE_TAG}"
+  ]
+  cache-to = [
+    "type=local,dest=${CACHE_DIR}/devcontainer,mode=max",
+    "type=registry,ref=${BASE_CACHE_TAG},mode=max"
+  ]
   args = {
     UBUNTU_VERSION     = "24.04"
     USERNAME           = "slotmap"
