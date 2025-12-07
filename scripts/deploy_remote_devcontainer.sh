@@ -33,6 +33,7 @@ DEFAULT_REMOTE_HOST="${DEFAULT_REMOTE_HOST:-""}"
 REMOTE_HOST=""
 REMOTE_USER=""
 SSH_KEY_PATH="$HOME/.ssh/id_ed25519.pub"
+PRIVATE_KEY_PATH=""
 REMOTE_PORT=""
 REMOTE_KEY_CACHE=""
 REMOTE_REPO_PATH=""
@@ -87,6 +88,8 @@ if [[ -f "$CONFIG_ENV_FILE" ]]; then
   source "$CONFIG_ENV_FILE"
 fi
 cd "$REPO_ROOT"
+# Track branch info for remote rebuild scripts; fallback to commit hash if detached
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || git rev-parse HEAD 2>/dev/null || echo "unknown")"
 
 # Apply defaults after loading config/env/devcontainer.env (if present)
 REMOTE_HOST=${REMOTE_HOST:-${DEVCONTAINER_REMOTE_HOST:-${DEFAULT_REMOTE_HOST:-""}}}
@@ -121,6 +124,12 @@ if [[ -n "${DEVCONTAINER_SSH_KEY:-}" ]]; then
    fi
 fi
 
+# Preserve private key path for later SSH tests before we coerce to .pub
+PRIVATE_KEY_PATH="${SSH_KEY_PATH}"
+if [[ "$PRIVATE_KEY_PATH" == *.pub ]]; then
+  PRIVATE_KEY_PATH="${PRIVATE_KEY_PATH%.pub}"
+fi
+
 # Fix: Ensure we are using the public key for copying
 if [[ "$SSH_KEY_PATH" != *.pub ]]; then
   if [[ -f "${SSH_KEY_PATH}.pub" ]]; then
@@ -138,9 +147,12 @@ CONTAINER_USER=${CONTAINER_USER:-$REMOTE_USER}
 REMOTE_HOME=${REMOTE_HOME:-"/home/${REMOTE_USER}"}
 REMOTE_KEY_CACHE=${REMOTE_KEY_CACHE:-"${REMOTE_HOME}/devcontainers/ssh_keys"}
 REMOTE_REPO_PATH=${REMOTE_REPO_PATH:-"${REMOTE_HOME}/dev/github/SlotMap"}
-REMOTE_SANDBOX_PATH=${REMOTE_SANDBOX_PATH:-"${REMOTE_HOME}/dev/devcontainers/cpp-devcontainer"}
+REMOTE_SANDBOX_PATH=${REMOTE_SANDBOX_PATH:-${SANDBOX_PATH:-"${REMOTE_HOME}/dev/devcontainers/cpp-devcontainer"}}
 REMOTE_SSH_SYNC_DIR=${REMOTE_SSH_SYNC_DIR:-"${REMOTE_HOME}/devcontainers/ssh_keys"}
-REMOTE_WORKSPACE_PATH=${REMOTE_WORKSPACE_PATH:-"${REMOTE_HOME}/dev/devcontainers/workspace"}
+REMOTE_WORKSPACE_PATH=${REMOTE_WORKSPACE_PATH:-${WORKSPACE_PATH:-"${REMOTE_HOME}/dev/devcontainers/workspace"}}
+DEVCONTAINER_SKIP_GIT_SYNC=${DEVCONTAINER_SKIP_GIT_SYNC:-0}
+# Where the public key will be staged on the remote host
+REMOTE_KEY_PATH="${REMOTE_KEY_CACHE%/}/$(basename "$SSH_KEY_PATH")"
 
 ensure_docker_context() {
   if [[ -z "$DOCKER_CONTEXT" ]]; then
@@ -166,13 +178,13 @@ else
   echo "Skipping SSH sync (SYNC_MAC_SSH=${SYNC_MAC_SSH})."
 fi
 
-# Resolve remote uid/gid for the container user if not provided
-if [[ -z "$CONTAINER_UID" || -z "$CONTAINER_GID" ]]; then
+# Resolve remote uid/gid for the container user (unless explicitly forced)
+if [[ "${DEVCONTAINER_FORCE_UID:-0}" != "1" ]]; then
   REMOTE_UID=$(ssh "${REMOTE_USER}@${REMOTE_HOST}" "id -u ${CONTAINER_USER}" 2>/dev/null || true)
   REMOTE_GID=$(ssh "${REMOTE_USER}@${REMOTE_HOST}" "id -g ${CONTAINER_USER}" 2>/dev/null || true)
   if [[ -n "$REMOTE_UID" && -n "$REMOTE_GID" ]]; then
-    CONTAINER_UID="${CONTAINER_UID:-$REMOTE_UID}"
-    CONTAINER_GID="${CONTAINER_GID:-$REMOTE_GID}"
+    CONTAINER_UID="$REMOTE_UID"
+    CONTAINER_GID="$REMOTE_GID"
   else
     echo "WARNING: Could not resolve uid/gid for ${CONTAINER_USER} on ${REMOTE_HOST}; falling back to local uid/gid."
     CONTAINER_UID="${CONTAINER_UID:-$(id -u)}"
@@ -215,13 +227,28 @@ ssh "${REMOTE_USER}@${REMOTE_HOST}" \
   CONTAINER_GID="$CONTAINER_GID" \
   WORKSPACE_PATH="$REMOTE_WORKSPACE_PATH" \
   DEVCONTAINER_SSH_PORT="$REMOTE_PORT" \
+  DEVCONTAINER_SKIP_GIT_SYNC="$DEVCONTAINER_SKIP_GIT_SYNC" \
+  CLANG_VARIANT="${CLANG_VARIANT:-}" \
+  GCC_VERSION="${GCC_VERSION:-}" \
+  REQUIRE_P2996="${REQUIRE_P2996:-0}" \
+  ENABLE_CLANG_P2996="${ENABLE_CLANG_P2996:-0}" \
+  ENABLE_GCC15="${ENABLE_GCC15:-0}" \
+  DEVCONTAINER_IMAGE="${DEVCONTAINER_IMAGE:-}" \
   bash <<'EOF'
 set -euo pipefail
 # Repo is already updated via rsync; skipping git operations
+cd "$REPO_PATH"
 REPO_PATH="$REPO_PATH" \
 SANDBOX_PATH="$SANDBOX_PATH" \
 KEY_CACHE="$KEY_CACHE" \
 DEVCONTAINER_SSH_PORT="$DEVCONTAINER_SSH_PORT" \
+DEVCONTAINER_SKIP_GIT_SYNC="$DEVCONTAINER_SKIP_GIT_SYNC" \
+CLANG_VARIANT="${CLANG_VARIANT:-}" \
+GCC_VERSION="${GCC_VERSION:-}" \
+REQUIRE_P2996="${REQUIRE_P2996:-0}" \
+ENABLE_CLANG_P2996="${ENABLE_CLANG_P2996:-0}" \
+ENABLE_GCC15="${ENABLE_GCC15:-0}" \
+DEVCONTAINER_IMAGE="${DEVCONTAINER_IMAGE:-}" \
 ./scripts/run_local_devcontainer.sh
 EOF
 

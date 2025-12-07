@@ -102,6 +102,7 @@ compute_path_prefix() {
     parts+=("/opt/gcc-15/bin")
   fi
   parts+=("${VCPKG_ROOT}" "/opt/mrdocs/bin")
+  parts+=("${HOME}/.local/bin")
   (IFS=:; echo "${parts[*]}")
 }
 PATH_PREFIX="$(compute_path_prefix)"
@@ -126,6 +127,24 @@ done
 # Ensure ccache/sccache dirs are owned and writable
 mkdir -p "${CCACHE_DIR}" "${SCCACHE_DIR}"
 chown_safe -R "${CURRENT_USER}:${CURRENT_GROUP}" "${CCACHE_DIR}" "${SCCACHE_DIR}"
+
+# Ensure aws CLI is on PATH if installed in the default location
+if ! command -v aws >/dev/null 2>&1; then
+  if [ -x /opt/aws-cli/v2/current/bin/aws ]; then
+    if [ -n "${SUDO}" ]; then
+      ${SUDO} ln -snf /opt/aws-cli/v2/current/bin/aws /usr/local/bin/aws || true
+    else
+      ln -snf /opt/aws-cli/v2/current/bin/aws /usr/local/bin/aws || true
+    fi
+  else
+    echo "[post_create] aws not found; installing via pip..."
+    if [ -n "${SUDO}" ]; then
+      ${SUDO} pip3 install -q awscli || true
+    else
+      pip3 install -q --user awscli || true
+    fi
+  fi
+fi
 
 # Make /tmp persistent via symlink into the cache volume if empty
 if [ ! -L /tmp ] && [ -z "$(ls -A /tmp)" ]; then

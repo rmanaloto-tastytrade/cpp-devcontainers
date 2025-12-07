@@ -48,6 +48,7 @@ DEVCONTAINER_VERIFY=${DEVCONTAINER_VERIFY:-0}
 CLANG_VARIANT=${CLANG_VARIANT:-21}
 GCC_VERSION=${GCC_VERSION:-15}
 DEVCONTAINER_CACHE_VOLUME=${DEVCONTAINER_CACHE_VOLUME:-cppdev-cache}
+DEVCONTAINER_CXX_STD=${DEVCONTAINER_CXX_STD:-"c++26"}
 export DEVCONTAINER_CACHE_VOLUME
 
 echo "[remote] Repo source       : $REPO_PATH"
@@ -59,6 +60,9 @@ echo "[remote] Host capacity     : nproc=$(nproc) mem_total=$(awk 'NR==1{print $
 
 BUILD_META_DIR=${BUILD_META_DIR:-"$HOME/dev/devcontainers/build_meta"}
 mkdir -p "$BUILD_META_DIR"
+
+# Default git SSH command to auto-accept new host keys (remote build git fetch)
+GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-"ssh -o StrictHostKeyChecking=accept-new"}
 
 # Cleanup: Keep only the 20 most recent builds (approx 40 files: *manifest.json + *metadata.json)
 if [[ -d "$BUILD_META_DIR" ]]; then
@@ -141,18 +145,93 @@ validate_image_tools() {
     "c++"
     "gcc"
   )
+  if [[ "$CLANG_VARIANT" == "p2996" ]]; then
+    tools+=("/opt/clang-p2996/bin/clang++-p2996")
+  fi
+  local unexpected=()
+  # Flag unexpected clang versions
+  for v in 14 15 21 22; do
+    if [[ "$CLANG_VARIANT" =~ ^[0-9]+$ && "$v" != "$CLANG_VARIANT" ]]; then
+      unexpected+=("clang++-${v}")
+    fi
+  done
+  if [[ "$CLANG_VARIANT" == "p2996" ]]; then
+    unexpected+=("clang++-21" "clang++-22")
+  fi
+  # Flag unexpected gcc versions
+  for g in 13 14 15; do
+    if [[ "$GCC_VERSION" =~ ^[0-9]+$ && "$g" != "$GCC_VERSION" ]]; then
+      unexpected+=("gcc-${g}" "g++-${g}")
+    fi
+  done
+
   if ! "${DOCKER_CMD[@]}" image inspect "$image" >/dev/null 2>&1; then
     echo "[remote] ERROR: image $image not found (context=${DOCKER_CONTEXT:-default})." >&2
     exit 1
   fi
   local check_script="set -euo pipefail
-echo \"container nproc=\$(nproc)\" 
+echo \"container nproc=\$(nproc)\"
+EXPECT_CLANG=\"${CLANG_VARIANT}\"
+EXPECT_GCC=\"${GCC_VERSION}\"
+EXPECT_STD=\"${DEVCONTAINER_CXX_STD}\"
+unexpected_list=\"${unexpected[*]}\"
 for t in ${tools[*]}; do
   if ! command -v \"\$t\" >/dev/null 2>&1; then
     echo \"\${t}: MISSING\"; exit 1; fi
   ver=\$(\"\$t\" --version | head -n1 || true)
   echo \"\${t}: \${ver}\"
-done"
+done
+for u in \$unexpected_list; do
+  if command -v \"\$u\" >/dev/null 2>&1; then
+    echo \"UNEXPECTED compiler present: \$u\"; exit 1
+  fi
+done
+# VCPKG path check
+if [ ! -L /opt/vcpkg ] || [ \"\$(readlink -f /opt/vcpkg)\" != \"/cppdev-cache/vcpkg-repo\" ]; then
+  echo \"VCPKG symlink invalid: /opt/vcpkg -> \$(readlink -f /opt/vcpkg 2>/dev/null)\"; exit 1
+fi
+if [ \"${VCPKG_ROOT:-}\" != \"/cppdev-cache/vcpkg-repo\" ]; then
+  echo \"VCPKG_ROOT unexpected: ${VCPKG_ROOT:-}\"; exit 1
+fi
+if [ \"${CLANG_VARIANT}\" = \"p2996\" ] && [ ! -x /opt/clang-p2996/bin/clang++-p2996 ]; then
+  echo \"Missing /opt/clang-p2996/bin/clang++-p2996\"; exit 1
+fi
+cat >/tmp/main.cpp <<'EOF'
+#include <iostream>
+int main() { std::cout << \"OK\" << std::endl; }
+EOF
+cat >/tmp/CMakeLists.txt <<EOF
+cmake_minimum_required(VERSION 3.24)
+project(CompileCheck LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD ${DEVCONTAINER_CXX_STD#c++})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+add_executable(main main.cpp)
+EOF
+mkdir -p /tmp/build && cd /tmp/build
+env CC=\"gcc-${GCC_VERSION}\" CXX=\"clang++-${CLANG_VARIANT}\" cmake -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON /tmp || exit 1
+ninja -v || exit 1
+./main | grep -q OK || exit 1
+if [ \"${CLANG_VARIANT}\" = \"p2996\" ]; then
+  if [ ! -x /opt/clang-p2996/bin/clang++-p2996 ]; then
+    echo \"Missing /opt/clang-p2996/bin/clang++-p2996\"; exit 1
+  fi
+  echo \"Checking libc++ linkage for p2996...\"
+  rm -rf /tmp/build && mkdir -p /tmp/build && cd /tmp/build
+  cat >/tmp/CMakeLists.txt <<EOF
+cmake_minimum_required(VERSION 3.24)
+project(CompileCheckLibcxx LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD ${DEVCONTAINER_CXX_STD#c++})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+add_executable(main main.cpp)
+set(CMAKE_CXX_FLAGS \"-stdlib=libc++\")
+set(CMAKE_EXE_LINKER_FLAGS \"-stdlib=libc++\")
+EOF
+  env CC=\"clang-${CLANG_VARIANT}\" CXX=\"clang++-${CLANG_VARIANT}\" cmake -G Ninja /tmp || exit 1
+  ninja -v || exit 1
+  ./main | grep -q OK || exit 1
+fi"
   if ! printf '%s\n' "$check_script" | "${DOCKER_CMD[@]}" run --rm "$image" bash -s; then
     echo "[remote] ERROR: tool validation failed for image $image (expected clang=${CLANG_VARIANT}, gcc=${GCC_VERSION})." >&2
     exit 1
@@ -197,15 +276,19 @@ ensure_devcontainer_cli() {
 
 echo "[remote] Updating repo at $REPO_PATH..."
 if git -C "$REPO_PATH" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  git -C "$REPO_PATH" fetch --all --prune
   CURRENT_BRANCH="${BRANCH:-$(git -C "$REPO_PATH" rev-parse --abbrev-ref HEAD)}"
-  if git -C "$REPO_PATH" show-ref --verify --quiet "refs/remotes/origin/${CURRENT_BRANCH}"; then
-    git -C "$REPO_PATH" checkout "${CURRENT_BRANCH}"
-    git -C "$REPO_PATH" reset --hard "origin/${CURRENT_BRANCH}"
+  if [[ "${DEVCONTAINER_SKIP_GIT_SYNC:-0}" == "1" ]]; then
+    echo "[remote] DEVCONTAINER_SKIP_GIT_SYNC=1; skipping git fetch/reset (using branch ${CURRENT_BRANCH})."
   else
-    git -C "$REPO_PATH" pull --ff-only
+    env GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o StrictHostKeyChecking=accept-new}" git -C "$REPO_PATH" fetch --all --prune
+    if git -C "$REPO_PATH" show-ref --verify --quiet "refs/remotes/origin/${CURRENT_BRANCH}"; then
+      git -C "$REPO_PATH" checkout "${CURRENT_BRANCH}"
+      env GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o StrictHostKeyChecking=accept-new}" git -C "$REPO_PATH" reset --hard "origin/${CURRENT_BRANCH}"
+    else
+      env GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o StrictHostKeyChecking=accept-new}" git -C "$REPO_PATH" pull --ff-only
+    fi
+    env GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o StrictHostKeyChecking=accept-new}" git -C "$REPO_PATH" submodule update --init --recursive
   fi
-  git -C "$REPO_PATH" submodule update --init --recursive
 else
   echo "[remote] ERROR: $REPO_PATH is not a git repository." >&2
   exit 1

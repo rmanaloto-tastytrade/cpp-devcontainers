@@ -61,3 +61,24 @@ The script will produce a log directory `logs/matrix_YYYYMMDD_HHMMSS/` containin
 | gcc14-clang21 | ✅ | ✅ | **PASS** |
 | gcc14-clang22 | ✅ | ✅ | **PASS** |
 | ... | ... | ... | ... |
+
+### SSH into a Devcontainer (Mac → Remote → Container)
+
+Use the helper script to connect without crafting SSH commands. Point it at the env file for the target permutation:
+
+```bash
+CONFIG_ENV_FILE=config/env/devcontainer.<host>.<perm>.env \
+./scripts/ssh_devcontainer.sh
+```
+
+Examples:
+
+```bash
+# gcc14-clang21 on host c090s4
+CONFIG_ENV_FILE=config/env/devcontainer.c090s4.gcc14-clang21.env ./scripts/ssh_devcontainer.sh
+
+# gcc15-clangp2996 on host c090s4
+CONFIG_ENV_FILE=config/env/devcontainer.c090s4.gcc15-clangp2996.env ./scripts/ssh_devcontainer.sh
+```
+
+The script reads the env file for host/user/port, sets up ProxyJump as needed, and connects directly into the container. No additional manual SSH steps are required.
