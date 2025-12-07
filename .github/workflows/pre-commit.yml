@@ -17,6 +17,16 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Install lint dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y hadolint shellcheck
+
+      - name: Run repository pre-commit script (hadolint/shellcheck guard)
+        run: |
+          chmod +x scripts/pre_commit.sh
+          scripts/pre_commit.sh
+
       - name: Run pre-commit
         uses: pre-commit/action@v4.0.1
         with:
