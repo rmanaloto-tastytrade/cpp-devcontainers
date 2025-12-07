@@ -48,7 +48,7 @@ jobs:
         run: |
           ./scripts/check_docker_bake.sh
           npm install -g @devcontainers/cli
-          devcontainer validate --workspace-folder .
+          devcontainer read-configuration --workspace-folder . >/tmp/devcontainer-config.json
           ./scripts/check_devcontainer_config.sh
 
       - name: Runner guard
