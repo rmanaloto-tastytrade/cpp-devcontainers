@@ -1,0 +1,8 @@
+- Potential docker.io touchpoints still possible: buildx/buildkit itself may auto-pull `docker/dockerfile:1` or builder images if not pinned to GHCR; `docker/setup-buildx-action`/`build-push-action` still default to docker.io unless their `driver-opts`/`install` images are overridden. Also any Dockerfile stage with a default `ARG BASE_IMAGE=docker.io/...` or hard-coded `FROM base` fallback could reintroduce docker.io if the `BASE_IMAGE` ARG is omitted in one target or test build.
+- GHCR base fetch failure path: if GHCR is unreachable, the current guard only checks the bake print output; buildkit might still attempt docker.io via implicit mirroring or because a cache entry references docker.io. No positive assertion that only GHCR refs are used (e.g., `registry-mirrors` or `source-policy=policy.json`).
+
+Suggestions to close gaps:
+1) Pin builder dependencies off docker.io: set `DOCKER_BUILDKIT_IMAGE`/`BUILDKITD_IMAGE` and `docker/dockerfile:1` to GHCR mirrors (or pre-load them) in the workflow, or vendor the Dockerfile frontend via `--frontend=local`.  
+2) Enforce GHCR-only for base: add a policy file and export `BUILDKIT_CONFIG` with `source-policy` denying docker.io, or use `--provenance=mode=max` plus `--attest=policy@policy.json` to fail on docker.io fetch.  
+3) Strengthen guard: after `bake --print`, grep both the rendered Dockerfile and build args for `docker.io/`; also inspect `cache-from`/`cache-to` refs. Fail the job if any docker.io reference appears.  
+4) Remove defaults: ensure Dockerfile has no default `BASE_IMAGE` pointing to docker.io and all bake targets set the ARG; consider a CI smoke `bake` without provided args to ensure it fails rather than defaulting to docker.io.
