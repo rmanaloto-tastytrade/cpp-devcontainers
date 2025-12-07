@@ -157,9 +157,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
   update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 10; \
   update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 10; \
   fi; \
-  # remove older gcc toolchains to avoid collisions
-  if [ "${GCC_VERSION}" != "13" ]; then apt-get purge -y gcc-13 g++-13 || true; fi; \
-  apt-get autoremove -y || true; \
+  # keep any preinstalled toolchains; alternatives already prefer the requested version
   rm -rf /var/lib/apt/lists/*
 
 # Latest Git via official PPA
