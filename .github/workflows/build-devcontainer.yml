@@ -17,7 +17,7 @@ env:
   TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
   BASE_IMAGE_TAG: ghcr.io/${{ github.repository }}/cpp-dev-base:local
   BASE_CACHE_TAG: ghcr.io/${{ github.repository }}/cpp-dev-base:cache
-  SHORT_SHA: ${{ github.sha[0:7] }}
+  SHORT_SHA: ${{ substr(github.sha, 0, 7) }}
   BUILD_TS: ${{ github.run_id }}-${{ github.run_attempt }}
   GIT_TAG: ${{ github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/') && github.ref || '' }}
   SUMMARY_JSON: devcontainer-summary.json
