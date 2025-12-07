@@ -17,8 +17,6 @@ env:
   TAG_BASE: ghcr.io/${{ github.repository }}/devcontainer
   BASE_IMAGE_TAG: ghcr.io/${{ github.repository }}/cpp-dev-base:local
   BASE_CACHE_TAG: ghcr.io/${{ github.repository }}/cpp-dev-base:cache
-  SHORT_SHA: ${{ substr(github.sha, 0, 7) }}
-  BUILD_TS: ${{ github.run_id }}-${{ github.run_attempt }}
   SUMMARY_JSON: devcontainer-summary.json
   EXPECTED_RUNNER_NAME: c0802s4-000
   EXPECTED_RUNNER_ALT: c0802s4
@@ -69,6 +67,11 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set build metadata
+        run: |
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          echo "BUILD_TS=$(date +%Y%m%d%H%M%S.%N)" >> "$GITHUB_ENV"
 
       - name: Login to GHCR
         uses: docker/login-action@v3
