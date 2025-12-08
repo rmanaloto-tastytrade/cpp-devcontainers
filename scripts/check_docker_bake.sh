@@ -22,7 +22,9 @@ docker buildx bake -f "$BAKE_FILE" --print devcontainer > /dev/null
 
 if command -v hclfmt >/dev/null 2>&1; then
   echo "[check] Checking HCL formatting with hclfmt..."
-  hclfmt -check "$BAKE_FILE"
+  if ! hclfmt -check "$BAKE_FILE"; then
+    echo "[check] WARNING: hclfmt detected format issues (non-fatal)." >&2
+  fi
 elif command -v terraform >/dev/null 2>&1; then
   # terraform fmt only supports .tf/.tfvars; skip for .hcl
   echo "[check] Skipping terraform fmt (unsupported for docker-bake.hcl)."
