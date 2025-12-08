@@ -140,8 +140,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   rm -rf /var/lib/apt/lists/*
 
 # Ubuntu toolchain PPA for latest GCC
-RUN --mount=type=cache,target=/var/cache/apt \
-  --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
   set -eux; \
   add-apt-repository -y ppa:ubuntu-toolchain-r/test; \
   apt-get update; \
@@ -158,8 +158,8 @@ RUN --mount=type=cache,target=/var/cache/apt \
   rm -rf /var/lib/apt/lists/*
 
 # Latest Git via official PPA
-RUN --mount=type=cache,target=/var/cache/apt \
-  --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
   set -eux; \
   add-apt-repository -y ppa:git-core/ppa; \
   apt-get update; \
@@ -167,8 +167,8 @@ RUN --mount=type=cache,target=/var/cache/apt \
   rm -rf /var/lib/apt/lists/*
 
 # Kitware repository for latest CMake (needed for custom Clang builds)
-RUN --mount=type=cache,target=/var/cache/apt \
-  --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
   set -eux; \
   curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor -o /usr/share/keyrings/kitware-archive.gpg; \
   echo "deb [signed-by=/usr/share/keyrings/kitware-archive.gpg] https://apt.kitware.com/ubuntu/ noble main" > /etc/apt/sources.list.d/kitware.list; \
