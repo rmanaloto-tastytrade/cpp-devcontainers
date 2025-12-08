@@ -19,8 +19,14 @@ jobs:
 
       - name: Install lint dependencies
         run: |
+          set -eux
           sudo apt-get update
-          sudo apt-get install -y hadolint shellcheck
+          sudo apt-get install -y shellcheck
+          # Install hadolint from official release (apt repo not available on all images)
+          HADOLINT_VERSION="v2.12.0"
+          curl -sSfL "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64" -o /tmp/hadolint
+          sudo install -m 0755 /tmp/hadolint /usr/local/bin/hadolint
+          rm -f /tmp/hadolint
 
       - name: Run repository pre-commit script (hadolint/shellcheck guard)
         run: |
