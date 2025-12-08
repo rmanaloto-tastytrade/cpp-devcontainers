@@ -220,7 +220,9 @@ RUN set -eux; \
   rm -rf /tmp/binutils-gdb.tar.gz /tmp/binutils-gdb
 
 # Ensure requested Clang toolchain exists for builder stages
-RUN set -e; \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+  set -e; \
   if [ "${CLANG_VARIANT}" != "p2996" ]; then \
   if ! command -v "clang++-${CLANG_VARIANT}" >/dev/null 2>&1; then \
   OS_CODENAME="$(. /etc/os-release && echo ${UBUNTU_CODENAME:-$VERSION_CODENAME})"; \
@@ -450,6 +452,8 @@ ARG VALGRIND_VERSION=3.23.0
 ARG ENABLE_VALGRIND=1
 ARG VALGRIND_SHA256
 RUN --mount=type=cache,target=/tmp/valgrind-build \
+  --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
   set -eux; \
   if [ "${ENABLE_VALGRIND}" != "1" ]; then \
   echo "Valgrind disabled"; \
@@ -640,7 +644,9 @@ RUN set -eux; \
   rm -rf /tmp/mutagen.tar.gz /tmp/mutagen*
 
 # Ensure the requested Clang toolchain (and libc++) is present for numeric variants
-RUN set -e; \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+  set -e; \
   if [ "${CLANG_VARIANT}" != "p2996" ]; then \
   if ! command -v "clang++-${CLANG_VARIANT}" >/dev/null 2>&1; then \
   OS_CODENAME="$(. /etc/os-release && echo ${UBUNTU_CODENAME:-$VERSION_CODENAME})"; \

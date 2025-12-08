@@ -1,0 +1,4 @@
+- Add apt cache mounts (`--mount=type=cache,target=/var/cache/apt,sharing=locked` + `/var/lib/apt/lists`) to the Clang toolchain ensure block in `/.devcontainer/Dockerfile` (base stage, RUN that adds `llvm-${CLANG_VARIANT}.list`) to avoid lock contention and reuse the cache like earlier apt blocks.
+- Do the same for the Clang ensure block in the final `devcontainer` stage in `/.devcontainer/Dockerfile` so permutation builds don’t drop back to uncached apt and risk lock races.
+- Add the same cache mounts to the valgrind fallback apt install in `/.devcontainer/Dockerfile` (`RUN ... fallback to apt valgrind`) to keep behaviour consistent and reduce redundant index downloads.
+- No other apt blocks or bake targets need changes; existing apt installs already use locked cache mounts and clean up lists.
