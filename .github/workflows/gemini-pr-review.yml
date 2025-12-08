@@ -1,0 +1,54 @@
+name: Gemini PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  gemini-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      final_message: ${{ steps.run_gemini.outputs.final-message }}
+    steps:
+      - name: Check out PR merge commit
+        uses: actions/checkout@v5
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+
+      - name: Prefetch base and head refs
+        run: |
+          git fetch --no-tags origin \
+            ${{ github.event.pull_request.base.ref }} \
+            +refs/pull/${{ github.event.pull_request.number }}/head
+
+      - name: Run Gemini review
+        id: run_gemini
+        uses: google-github-actions/run-gemini-cli@v1
+        with:
+          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+          prompt-file: .github/gemini/gemini-pr-review-prompt.md
+          command: review
+
+  post-feedback:
+    runs-on: ubuntu-latest
+    needs: gemini-review
+    if: needs.gemini-review.outputs.final_message != ''
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Post Gemini feedback as PR comment
+        uses: actions/github-script@v7
+        env:
+          GEMINI_FINAL_MESSAGE: ${{ needs.gemini-review.outputs.final_message }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: process.env.GEMINI_FINAL_MESSAGE,
+            });
