@@ -80,6 +80,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
+        id: buildx
         uses: docker/setup-buildx-action@v3
         with:
           driver-opts: |
@@ -223,6 +224,7 @@ jobs:
       - name: Build base image (bake)
         uses: docker/bake-action@v6
         with:
+          builder: ${{ steps.buildx.outputs.name }}
           workdir: ${{ github.workspace }}
           source: .
           files: .devcontainer/docker-bake.hcl
@@ -237,6 +239,7 @@ jobs:
       - name: Build devcontainers (bake)
         uses: docker/bake-action@v6
         with:
+          builder: ${{ steps.buildx.outputs.name }}
           workdir: ${{ github.workspace }}
           source: .
           files: .devcontainer/docker-bake.hcl

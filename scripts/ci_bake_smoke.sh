@@ -26,6 +26,7 @@ if grep -Ei "docker\\.io|library/" /tmp/bake-smoke-plan.txt; then
 fi
 
 docker buildx bake \
+  --builder "$(docker buildx ls --format '{{.Name}}' | head -n1)" \
   --file .devcontainer/docker-bake.hcl \
   --set base.cache-from="type=registry,ref=${BASE_CACHE_TAG}" \
   --set base.cache-to="type=registry,ref=${BASE_CACHE_TAG},mode=max,compression=zstd,oci-mediatypes=true,force-compression=true" \
@@ -33,6 +34,7 @@ docker buildx bake \
   base
 
 docker buildx bake \
+  --builder "$(docker buildx ls --format '{{.Name}}' | head -n1)" \
   --file .devcontainer/docker-bake.hcl \
   --set devcontainer_gcc14_clang_qual.cache-from="type=registry,ref=${BASE_CACHE_TAG}" \
   --set devcontainer_gcc14_clang_dev.cache-from="type=registry,ref=${BASE_CACHE_TAG}" \
