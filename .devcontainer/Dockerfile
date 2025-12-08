@@ -84,8 +84,8 @@ ENV LLVM_VERSION=${LLVM_VERSION} \
   PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # Core OS packages, tooling, and dependencies required for building and docs
-RUN --mount=type=cache,target=/var/cache/apt \
-  --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
   set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
@@ -130,8 +130,8 @@ RUN --mount=type=cache,target=/var/cache/apt \
   rm -rf /var/lib/apt/lists/*
 
 # Linux perf tooling (kept in base so downstream stages share it)
-RUN --mount=type=cache,target=/var/cache/apt \
-  --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
   set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends linux-tools-common linux-tools-generic; \
