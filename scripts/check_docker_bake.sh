@@ -24,11 +24,8 @@ if command -v hclfmt >/dev/null 2>&1; then
   echo "[check] Checking HCL formatting with hclfmt..."
   hclfmt -check "$BAKE_FILE"
 elif command -v terraform >/dev/null 2>&1; then
-  echo "[check] Checking HCL formatting with terraform fmt..."
-  TMP_FMT="$(mktemp /tmp/docker-bake-XXXXXX.tf)"
-  trap 'rm -f "$TMP_FMT"' EXIT
-  cp "$BAKE_FILE" "$TMP_FMT"
-  terraform fmt -check "$TMP_FMT"
+  # terraform fmt only supports .tf/.tfvars; skip for .hcl
+  echo "[check] Skipping terraform fmt (unsupported for docker-bake.hcl)."
 else
   echo "[check] WARNING: hclfmt/terraform not installed; skipping HCL format check." >&2
 fi

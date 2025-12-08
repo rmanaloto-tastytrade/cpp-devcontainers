@@ -7,8 +7,8 @@ variable "TAG_BASE" {
 }
 
 variable "BASE_TAG" {
-  # Fully qualified base image tag (avoid docker.io/library fallback)
-  default = "ghcr.io/rmanaloto-tastytrade/cpp-devcontainers/cpp-dev-base:local"
+  # Local base image tag to avoid registry pulls
+  default = "cpp-dev-base:local"
 }
 
 variable "BASE_CACHE_TAG" {
@@ -138,6 +138,7 @@ target "_base" {
 target "base" {
   inherits = ["_base"]
   target   = "base"
+  max-parallelism = 1
   tags = [
     "${BASE_TAG}",
     # Local alias to ensure availability without registry pulls
